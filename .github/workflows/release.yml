@@ -3,6 +3,12 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  # Build and publish an existing tag again, for example after a registry change.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to publish, for example v0.1.0
+        required: true
 
 permissions:
   contents: read
@@ -11,6 +17,7 @@ env:
   # Docker Hub is the public image. The same build also goes to GitHub Packages.
   IMAGE: loruorg/turmite
   GHCR_IMAGE: ghcr.io/loruorg/turmite
+  TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
   version:
@@ -20,13 +27,15 @@ jobs:
       prerelease: ${{ steps.v.outputs.prerelease }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
       - id: v
         name: Tag must match the crate version
         run: |
-          tag=${GITHUB_REF_NAME#v}
+          tag=${TAG#v}
           crate=$(sed -n 's/^version = "\(.*\)"/\1/p' crates/turmite/Cargo.toml | head -n 1)
           if [ "$tag" != "$crate" ]; then
-            echo "tag $GITHUB_REF_NAME does not match crates/turmite version $crate" >&2
+            echo "tag $TAG does not match crates/turmite version $crate" >&2
             exit 1
           fi
           echo "version=$tag" >> "$GITHUB_OUTPUT"
@@ -42,6 +51,8 @@ jobs:
       attestations: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
       - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v4
         with:
@@ -59,7 +70,7 @@ jobs:
             ${{ env.IMAGE }}
             ${{ env.GHCR_IMAGE }}
           tags: |
-            type=semver,pattern={{version}}
+            type=semver,pattern={{version}},value=${{ env.TAG }}
             type=raw,value=latest,enable=${{ needs.version.outputs.prerelease == 'false' }}
       # The Dockerfile cross-compiles, so arm64 needs no emulation.
       - id: build
@@ -86,6 +97,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
       - run: plugins/woocommerce/build.sh
       - uses: actions/upload-artifact@v7
         with:
@@ -100,6 +113,8 @@ jobs:
         working-directory: sdk/typescript
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
       - uses: pnpm/action-setup@v6
         with:
           version: 12.15.0
@@ -138,6 +153,7 @@ jobs:
           EOF
       - uses: softprops/action-gh-release@v3
         with:
+          tag_name: ${{ env.TAG }}
           name: Turmite ${{ needs.version.outputs.version }}
           body_path: notes.md
           generate_release_notes: true
