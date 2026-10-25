@@ -91,7 +91,12 @@ contract Handler is Test {
         ok;
     }
 
-    function _caller(address c) internal pure returns (address) {
+    /// A deposit address has no key and never calls. A prank from it would give it a nonce, and CREATE2
+    /// cannot deploy to an address with a nonce.
+    function _caller(address c) internal view returns (address) {
+        for (uint256 i; i < SALTS; ++i) {
+            if (c == wallet(i)) return address(0xbeef);
+        }
         return c == address(vm) ? address(0xbeef) : c;
     }
 
@@ -127,6 +132,10 @@ contract InvariantTest is DeployHelper {
         factory = deployFactory(cold);
         handler = new Handler(factory, cold);
         targetContract(address(handler));
+        // The same holds for the fuzzer's senders.
+        for (uint256 i; i < 8; ++i) {
+            excludeSender(handler.wallet(i));
+        }
     }
 
     /// Native coin is either at a deposit address or at the cold wallet.
