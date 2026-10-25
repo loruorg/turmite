@@ -3,7 +3,7 @@ title: Changelog
 description: Changes in each Turmite release.
 ---
 
-Each release is on [GitHub Releases](https://github.com/loruorg/turmite/releases). The image is `ghcr.io/loruorg/turmite:<version>`. Security fixes are also published as [security advisories](https://github.com/loruorg/turmite/security/advisories).
+Each release is on [GitHub Releases](https://github.com/loruorg/turmite/releases). The image is `loruorg/turmite:<version>` on Docker Hub. Security fixes are also published as [security advisories](https://github.com/loruorg/turmite/security/advisories).
 
 ## 0.1.0
 

@@ -7,7 +7,7 @@
 //!
 //! The paths in `.env` are the paths inside the worker container (`/secrets/...`), as
 //! `deploy/docker-compose.yml` mounts them. In the image the working directory is `/data`:
-//! `docker run --rm -it --user 0:0 -v /opt/turmite:/data ghcr.io/loruorg/turmite init --site-url ...`
+//! `docker run --rm -it --user 0:0 -v /opt/turmite:/data loruorg/turmite init --site-url ...`
 
 use std::{
     fs,

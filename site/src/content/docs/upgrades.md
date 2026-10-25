@@ -3,7 +3,7 @@ title: Upgrades
 description: Update Turmite to a new release, with a database dump before each upgrade.
 ---
 
-Turmite releases are on [GitHub](https://github.com/loruorg/turmite/releases). The image is `ghcr.io/loruorg/turmite`, tagged with each version. When update checks are on, admins see a banner in the dashboard when a new release exists. See [Update checks](#update-checks).
+Turmite releases are on [GitHub](https://github.com/loruorg/turmite/releases). The image is `loruorg/turmite` on Docker Hub, tagged with each version. When update checks are on, admins see a banner in the dashboard when a new release exists. See [Update checks](#update-checks).
 
 ## Before you upgrade
 

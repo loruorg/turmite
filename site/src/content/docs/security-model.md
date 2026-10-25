@@ -134,7 +134,7 @@ A minute after start and then once a day, the worker reads the latest release an
 GitHub Actions builds each release image from a version tag, with an SBOM and a build provenance attestation. To check an image:
 
 ```bash
-gh attestation verify oci://ghcr.io/loruorg/turmite:<version> --owner loruorg
+gh attestation verify oci://index.docker.io/loruorg/turmite:<version> --owner loruorg
 ```
 
 ## Rotate secrets

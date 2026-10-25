@@ -75,7 +75,7 @@ On mainnet the site URL must start with `https://`. `turmite init` and the serve
 1. It installs Docker Engine and the Compose plugin from Docker's apt repository, if they are missing.
 2. It finds the latest release, unless you give `--version`.
 3. It writes `docker-compose.yml`, `Caddyfile`, `backup.sh` and `restore.sh` to `/opt/turmite`.
-4. It pulls the image `ghcr.io/loruorg/turmite:<version>`.
+4. It pulls the image `loruorg/turmite:<version>` from Docker Hub.
 5. It runs `turmite init` in a container. This command asks for the passphrase and writes `.env` and the `secrets/` directory.
 6. It sets `TURMITE_VERSION` in `.env`.
 7. It starts the stack and waits up to 2 minutes until the `api` is healthy. Migrations run when the services start.

@@ -46,7 +46,7 @@ services:
       retries: 10
 
   turmite:
-    image: ghcr.io/loruorg/turmite:latest
+    image: loruorg/turmite:latest
     command: ["serve", "--demo"]
     environment:
       TURMITE_DATABASE_URL: postgres://turmite:turmite@postgres:5432/turmite

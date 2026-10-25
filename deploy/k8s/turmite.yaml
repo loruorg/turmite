@@ -1,6 +1,6 @@
 # Turmite on Kubernetes: PostgreSQL, the API and the worker.
 #
-#   docker run --rm -it -v "$PWD:/data" --user "$(id -u):$(id -g)" ghcr.io/loruorg/turmite:0.1.0 \
+#   docker run --rm -it -v "$PWD:/data" --user "$(id -u):$(id -g)" loruorg/turmite:0.1.0 \
 #     init --site-url https://pay.example.com
 #   kubectl create namespace turmite
 #   kubectl -n turmite create secret generic turmite-env --from-env-file=.env
@@ -88,7 +88,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: api
-          image: ghcr.io/loruorg/turmite:0.1.0
+          image: loruorg/turmite:0.1.0
           args: ["serve", "--role", "api"]
           envFrom:
             - secretRef: { name: turmite-env }
@@ -134,7 +134,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: worker
-          image: ghcr.io/loruorg/turmite:0.1.0
+          image: loruorg/turmite:0.1.0
           args: ["serve", "--role", "worker"]
           envFrom:
             - secretRef: { name: turmite-env }

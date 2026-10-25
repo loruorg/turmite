@@ -10,7 +10,7 @@
 set -eu
 
 REPO=loruorg/turmite
-IMAGE=ghcr.io/loruorg/turmite
+IMAGE=loruorg/turmite
 
 dir=/opt/turmite
 mode=

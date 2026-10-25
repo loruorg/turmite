@@ -100,7 +100,7 @@ The files get mode `600`. `turmite init` refuses to overwrite an existing `.env`
 To run it from the image:
 
 ```bash
-sudo docker run --rm -it --user 0:0 -v /opt/turmite:/data ghcr.io/loruorg/turmite:0.1.0 \
+sudo docker run --rm -it --user 0:0 -v /opt/turmite:/data loruorg/turmite:0.1.0 \
   init --mode mainnet --site-url https://pay.example.com
 ```
 

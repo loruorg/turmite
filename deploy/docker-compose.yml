@@ -9,7 +9,7 @@
 name: turmite
 
 x-turmite: &turmite
-  image: ghcr.io/loruorg/turmite:${TURMITE_VERSION:?set TURMITE_VERSION in .env}
+  image: loruorg/turmite:${TURMITE_VERSION:?set TURMITE_VERSION in .env}
   restart: unless-stopped
   read_only: true
   tmpfs: [/tmp]
