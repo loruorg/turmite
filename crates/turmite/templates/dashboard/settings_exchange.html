@@ -1,0 +1,41 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head"><div><h1>Settings</h1><p>Let customers pay with any coin. Trocador finds an exchange that swaps it into the payment's coin and sends it to the payment's address.</p></div></header>
+{% include "dashboard/settings_tabs.html" %}
+
+{% if !supported %}
+<div class="callout">This server runs on testnet. Exchanges only swap mainnet coins, so customers do not see this option here.</div>
+{% endif %}
+
+<section class="card">
+  <div class="card-head"><div><h2>Pay with any coin</h2><p>Funds count only when they arrive on chain at the payment's address. The exchange's status is shown to the customer and is never used to mark a payment paid.</p></div>
+    {% if enabled %}<span class="badge badge-ok">On</span>{% else %}<span class="badge">Off</span>{% endif %}</div>
+  <form class="card-pad form" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/settings/exchange">
+    <fieldset {% if !can_edit %}disabled{% endif %} class="form">
+    <label class="check"><input type="checkbox" name="enabled" value="1"{% if enabled %} checked{% endif %}> Show "Pay with another coin" on the checkout</label>
+    <div class="field"><label for="key">Trocador API key</label><input id="key" class="mono" name="api_key" type="password" autocomplete="off" placeholder="{% if key_set %}Set. Enter a new key to replace it.{% else %}Paste your key{% endif %}"><span class="hint">Get a key from the Trocador partner program. It is stored encrypted and never shown again.{% if key_set %} Status: set.{% endif %}</span></div>
+    <div class="row">
+      <div class="field"><label for="mk">Your markup</label>
+        <select id="mk" name="markup">{% for m in markups %}<option value="{{ m }}"{% if *m == markup %} selected{% endif %}>{{ m }} %</option>{% endfor %}</select>
+        <span class="hint">0 % shares Trocador's fee with you. A higher markup gives customers worse rates.</span></div>
+      <div class="field"><label for="kyc">Lowest KYC rating</label>
+        <select id="kyc" name="min_kyc">{% for r in ratings %}<option value="{{ r }}"{% if *r == min_kyc %} selected{% endif %}>{{ r }}{% if *r == "A" %} (no KYC){% endif %}{% if *r == "D" %} (can hold funds){% endif %}</option>{% endfor %}</select>
+        <span class="hint">A means no KYC. D means the exchange can hold funds until a customer verifies.</span></div>
+    </div>
+    <div class="field"><label for="cl">Allowed coins</label><input id="cl" class="mono" name="coins" value="{{ coins }}" placeholder="All coins"><span class="hint">Empty allows every coin ({{ coin_count }} listed now). Else tickers, comma separated: <code>btc, xmr, ltc</code>. Add a network with a colon: <code>usdt:trc20</code>.</span></div>
+    <div class="field field-sm"><label for="t1">Two-factor code</label><input id="t1" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+    {% if can_edit %}<div><button class="btn" type="submit">Save</button></div>{% endif %}
+    </fieldset>
+  </form>
+</section>
+
+{% if key_set && can_edit %}
+<section class="card">
+  <div class="card-head"><div><h2>Remove the API key</h2><p>Turns the exchange off. Open swaps keep their status page.</p></div></div>
+  <form class="card-pad row" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/settings/exchange/remove-key" data-confirm="Remove the Trocador API key?">
+    <div class="field"><label for="t2">Two-factor code</label><input id="t2" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+    <button class="btn btn-danger" type="submit">Remove key</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

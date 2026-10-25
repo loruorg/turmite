@@ -1,0 +1,18 @@
+---
+import fs from 'node:fs';
+import path from 'node:path';
+
+interface Props {
+  variant?: 'mark' | 'wordmark';
+  class?: string;
+  label?: string;
+}
+const { variant = 'wordmark', class: cls, label = 'Turmite' } = Astro.props;
+const file = variant === 'mark' ? 'logo.svg' : 'logo-wordmark.svg';
+const svg = fs
+  .readFileSync(path.join(process.cwd(), 'public', file), 'utf8')
+  .trim()
+  .replace('<svg ', `<svg role="img" aria-label="${label}" ${cls ? `class="${cls}" ` : ''}`);
+---
+
+<Fragment set:html={svg} />

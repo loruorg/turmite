@@ -1,0 +1,142 @@
+---
+import Icon from '../Icon.astro';
+const install = 'curl -fsSL https://turmite.com/install.sh | sudo sh -s -- --site-url https://pay.example.com';
+// A selection of the lines that deploy/install.sh and `turmite init` print.
+const out = [
+  { t: 'Mode: mainnet (real funds) or testnet [mainnet]:', k: 'ask' },
+  { t: 'Hot-wallet passphrase (12+ characters):', k: 'ask' },
+  { t: 'Wrote /data/.env and /data/secrets.', k: 'ok' },
+  { t: 'Turmite 0.1.0 is running at https://pay.example.com', k: 'ok' },
+  { t: '1. Open https://pay.example.com/dashboard and create the root account.', k: 'next' },
+  { t: '2. Turn on two-factor authentication on the account page.', k: 'next' },
+];
+---
+
+<section class="section" aria-labelledby="selfhost-title">
+  <div class="wrap split rev">
+    <div class="panel term reveal">
+      <div class="panel-bar">
+        <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="grow">root@pay:~</span>
+        <button class="copy-btn" type="button" data-copy={install} aria-label="Copy the install command" hidden>
+          <Icon name="copy" class="i-copy" /><Icon name="check" class="i-check" />
+        </button>
+      </div>
+      <div class="term-body">
+        <p class="cmdline"><span class="ps1">$</span> <code>{install}</code></p>
+        <ol class="out" aria-label="Example output">
+          {
+            out.map((l, i) => (
+              <li class={l.k} style={`--i:${i}`}>
+                <span class="mark" aria-hidden="true">{l.k === 'ok' ? 'ok' : l.k === 'ask' ? '?' : '->'}</span>
+                {l.t}
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </div>
+    <div>
+      <header class="sec-head">
+        <span class="sec-num">07 Self-host</span>
+        <h2 id="selfhost-title">One command on a Linux server.</h2>
+        <p>
+          The script installs a Docker Compose stack with PostgreSQL and Caddy for TLS. Then you create the root user in
+          the browser and turn on two-factor.
+        </p>
+      </header>
+      <ul class="ticks">
+        <li>One Rust binary. Two roles: <code>api</code> and <code>worker</code>.</li>
+        <li>Your own RPC nodes, with failover, set in the dashboard.</li>
+        <li>JSON logs, a <code>/healthz</code> endpoint and daily update checks.</li>
+      </ul>
+      <p class="more-row"><a class="more" href="/docs/install/">Install on a server <Icon name="arrow" /></a></p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .more-row {
+    margin-top: var(--space-6);
+  }
+  .term {
+    background: var(--fg);
+    color: #e6e6e6;
+    border-color: var(--fg);
+  }
+  .term .panel-bar {
+    border-bottom-color: #2a2a2a;
+    color: #8f8f8f;
+  }
+  .term .panel-bar .dots i {
+    border-color: #6b6b6b;
+  }
+  .term .copy-btn {
+    color: #8f8f8f;
+  }
+  .term .copy-btn:hover {
+    color: #fff;
+    border-color: #444;
+  }
+  .term :global(.copy-btn[data-done] .i-check) {
+    color: #fff;
+  }
+  .term-body {
+    padding: 22px 22px 26px;
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    line-height: 1.9;
+    overflow-x: auto;
+  }
+  .cmdline {
+    white-space: nowrap;
+    color: #fff;
+  }
+  .cmdline code {
+    font-size: inherit;
+  }
+  .ps1 {
+    color: #8f8f8f;
+  }
+  .out {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+    color: #bdbdbd;
+  }
+  .out li {
+    display: flex;
+    gap: 12px;
+    white-space: nowrap;
+  }
+  .mark {
+    width: 2ch;
+    flex: none;
+    color: #fff;
+  }
+  .out .next {
+    color: #fff;
+    font-weight: 600;
+  }
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .out li {
+        animation: line-in linear both;
+      }
+      .term .out li {
+        animation-timeline: view();
+        animation-range: entry calc(55% + var(--i) * 7%) entry calc(62% + var(--i) * 7%);
+      }
+    }
+  }
+  @keyframes line-in {
+    from {
+      opacity: 0;
+      transform: translateX(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>

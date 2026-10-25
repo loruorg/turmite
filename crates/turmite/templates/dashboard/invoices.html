@@ -1,0 +1,31 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head"><div><h1>Invoices</h1><p>Payment links. The customer opens the link and chooses a coin. Your shop can also create them with <code>POST /v1/invoice</code>.</p></div></header>
+
+{% if !new_url.is_empty() %}
+<section class="card card-pad">
+  <h2>Payment link ready</h2>
+  <p class="dim" style="margin:6px 0 12px">Send this link to the customer.</p>
+  <div class="secret"><code>{{ new_url }}</code><button class="btn btn-sm btn-2 copy" type="button" data-copy="{{ new_url }}" hidden>Copy</button><a class="btn btn-sm btn-2" href="{{ new_url }}" target="_blank" rel="noopener">Open</a></div>
+</section>
+{% endif %}
+
+{% if can_create %}
+<section class="card">
+  <div class="card-head"><div><h2>New payment link</h2></div></div>
+  <form class="card-pad row" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/invoices">
+    <div class="field"><label for="am">Amount</label><input id="am" name="amount" inputmode="decimal" required placeholder="49.00"></div>
+    <div class="field" style="max-width:120px"><label for="cu">Currency</label><input id="cu" name="currency" value="usd" required maxlength="10"></div>
+    <div class="field" style="flex:2"><label for="de">Description</label><input id="de" name="description" maxlength="1000" placeholder="Order 1042"></div>
+    <button class="btn" type="submit">Create link</button>
+  </form>
+</section>
+{% endif %}
+
+<section class="card">
+  {% if rows.is_empty() %}<div class="empty"><h3>No invoices yet</h3></div>{% else %}
+  <div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Description</th><th class="num">Amount</th><th>Created</th><th></th></tr></thead><tbody>
+  {% for r in rows %}<tr><td class="mono">{{ r.id }}</td><td class="truncate">{{ r.order }}</td><td class="num">{{ r.price }}</td><td class="dim">{{ r.created }}</td><td class="num">{% if r.expired %}<span class="badge badge-bad">Expired</span>{% else %}<a class="btn btn-sm btn-2" href="{{ r.url }}" target="_blank" rel="noopener">Open</a>{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>{% endif %}
+</section>
+{% endblock %}

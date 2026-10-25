@@ -1,0 +1,76 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head"><div><h1>Hot wallets</h1><p>Hot wallets send payouts and pay network fees for sweeps. Keys are encrypted to the worker's key. Nobody can see or export a key after it is stored. Bitcoin and Monero have no hot wallet: their payments go straight to the merchant's own wallet, so they have no payouts.</p></div></header>
+
+{% if !can_store %}<div class="alert" role="status">TURMITE_HOT_RECIPIENT is not set, so this server cannot store hot keys. Run <code>turmite init</code>.</div>{% endif %}
+
+{% if wallets.is_empty() %}
+<section class="card"><div class="empty"><h3>No hot wallets</h3><p>Make or import one below. Then fund it and assign it to projects.</p></div></section>
+{% else %}
+<div class="grid grid-2">
+{% for w in wallets %}
+<section class="card">
+  <div class="card-head">
+    <div><h2>{{ w.label }}</h2><p>{{ w.family_name }} · added {{ w.created }}</p></div>
+    <span class="badge badge-plain">{{ w.family }}</span>
+  </div>
+  <div class="card-pad">
+    <div class="secret"><code>{{ w.address }}</code><button class="btn btn-sm btn-2 copy" type="button" data-copy="{{ w.address }}" hidden>Copy</button></div>
+  </div>
+  <dl class="kv">
+    {% for b in w.balances %}<dt>{{ b.network }}</dt><dd class="mono">{{ b.amount }}</dd>{% endfor %}
+    {% if w.balances.is_empty() %}<dt>Balance</dt><dd class="dim">No network of this family has a node.</dd>{% endif %}
+    <dt>Projects</dt><dd>{% if w.projects.is_empty() %}<span class="dim">None</span>{% else %}{{ w.projects.join(", ") }}{% endif %}</dd>
+  </dl>
+</section>
+{% endfor %}
+</div>
+{% endif %}
+
+<div class="section-title"><h2>Assign to a project</h2></div>
+<section class="card">
+  {% if !assignments.is_empty() %}
+  <div class="table-wrap"><table><thead><tr><th>Project</th><th>Family</th><th>Hot wallet</th></tr></thead><tbody>
+  {% for a in assignments %}<tr><td>{{ a.project }}</td><td>{{ a.family }}</td><td class="mono truncate">{{ a.wallet }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {% endif %}
+  <form class="card-pad row" method="post" action="{{ shell.base }}/dashboard/admin/hot-wallets/assign"{% if !assignments.is_empty() %} style="border-top:1px solid var(--line)"{% endif %}>
+    <div class="field"><label for="ap">Project</label><select id="ap" name="project" required>{% for (id, name) in projects %}<option value="{{ id }}">{{ name }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="af">Family</label><select id="af" name="family" required>{% for (f, name) in families %}<option value="{{ f }}">{{ name }}</option>{% endfor %}</select></div>
+    <div class="field" style="flex:2"><label for="aw">Hot wallet</label><select id="aw" name="wallet"><option value="">None (remove)</option>{% for (id, label) in options %}<option value="{{ id }}">{{ label }}</option>{% endfor %}</select></div>
+    <div class="field" style="max-width:150px"><label for="at">Two-factor code</label><input id="at" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+    <button class="btn" type="submit">Save</button>
+  </form>
+</section>
+
+<div class="grid grid-2" style="margin-top:20px">
+<section class="card">
+  <div class="card-head"><div><h2>Make a hot wallet</h2><p>The server makes a new key. It is never shown, so fund the wallet with amounts you can afford to keep online.</p></div></div>
+  <form class="card-pad form" method="post" action="{{ shell.base }}/dashboard/admin/hot-wallets/generate">
+    <fieldset class="form" {% if !can_store %}disabled{% endif %}>
+    <div class="field"><label for="gf">Family</label><select id="gf" name="family">{% for (f, name) in families %}<option value="{{ f }}">{{ name }}</option>{% endfor %}</select><span class="hint">One EVM key works on every EVM network.</span></div>
+    <div class="field"><label for="gl">Label</label><input id="gl" name="label" maxlength="80" required placeholder="Payouts"></div>
+    <div class="row">
+      <div class="field" style="max-width:180px"><label for="gt">Two-factor code</label><input id="gt" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+      <button class="btn" type="submit">Make wallet</button>
+    </div>
+    </fieldset>
+  </form>
+</section>
+
+<section class="card">
+  <div class="card-head"><div><h2>Import a key</h2><p>Use a key that no other system signs with: Turmite counts on its own nonces.</p></div></div>
+  <form class="card-pad form" method="post" action="{{ shell.base }}/dashboard/admin/hot-wallets/import" autocomplete="off">
+    <fieldset class="form" {% if !can_store %}disabled{% endif %}>
+    <div class="field"><label for="if">Family</label><select id="if" name="family">{% for (f, name) in families %}<option value="{{ f }}">{{ name }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="il">Label</label><input id="il" name="label" maxlength="80" required></div>
+    <div class="field"><label for="is">Private key</label><input id="is" class="mono" name="secret" type="password" required autocomplete="off" spellcheck="false"><span class="hint">EVM and Tron: 64 hex characters. Solana: the base58 keypair or the keypair file's byte array. TON: the 24 words, or the 32-byte seed in hex (wallet v4r2).</span></div>
+    <div class="row">
+      <div class="field" style="max-width:180px"><label for="it">Two-factor code</label><input id="it" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+      <button class="btn" type="submit">Import</button>
+    </div>
+    </fieldset>
+  </form>
+</section>
+</div>
+{% endblock %}

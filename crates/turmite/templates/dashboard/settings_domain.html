@@ -1,0 +1,22 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head"><div><h1>Settings</h1><p>Serve this project's payment pages on your own host name.</p></div></header>
+{% include "dashboard/settings_tabs.html" %}
+
+<section class="card">
+  <div class="card-head"><div><h2>Checkout domain</h2><p>New payment and invoice links use it. On this host the server shows only payment pages, the merchant API and static files. The dashboard is not served there.</p></div>
+    {% if !domain.is_empty() %}<span class="badge badge-ok">{{ domain }}</span>{% endif %}</div>
+  <form class="card-pad form" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/settings/domain">
+    <fieldset {% if !is_admin %}disabled{% endif %} class="form">
+    <div class="field"><label for="dm">Host name</label><input id="dm" class="mono" name="domain" value="{{ domain }}" placeholder="pay.shop.example"><span class="hint">Leave empty to use the site host, <code>{{ site_host }}</code>. Links look like <code>{{ example }}</code>.</span></div>
+    <ol class="steps-plain">
+      <li>Point a DNS record for the host name to this server.</li>
+      <li>Add the host name to your reverse proxy so it gets a TLS certificate. With the Caddy setup, add it next to the site host in the Caddyfile.</li>
+      <li>Save the host name here.</li>
+    </ol>
+    <div class="field field-sm"><label for="t1">Two-factor code</label><input id="t1" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+    {% if is_admin %}<div><button class="btn" type="submit">Save</button></div>{% else %}<p class="hint">Only server admins can change the checkout domain.</p>{% endif %}
+    </fieldset>
+  </form>
+</section>
+{% endblock %}

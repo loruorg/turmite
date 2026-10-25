@@ -1,0 +1,73 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head"><div><h1>Settings</h1><p>How the payment pages look, and where customers go back to.</p></div></header>
+{% include "dashboard/settings_tabs.html" %}
+
+<div class="split">
+<div class="split-main">
+<section class="card">
+  <div class="card-head"><div><h2>Logo</h2><p>PNG, JPEG or WebP, at most 2 MB. It is scaled to fit 512 x 512 pixels.</p></div></div>
+  <form class="card-pad form" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/settings/checkout/logo" enctype="multipart/form-data">
+    <fieldset {% if !can_edit %}disabled{% endif %} class="form">
+    <div class="logo-row">
+      <span class="logo-box">{% if !logo.is_empty() %}<img src="{{ logo }}" alt="Current logo">{% else %}<span class="dim small">No logo</span>{% endif %}</span>
+      <div class="field"><label for="lf">Image file</label><input id="lf" name="logo" type="file" accept="image/png,image/jpeg,image/webp"></div>
+    </div>
+    <div class="field"><label for="lu">Or an image URL</label><input id="lu" name="logo_url" type="url" placeholder="https://shop.example/logo.png" value="{% if let Some(u) = b.logo_url %}{{ u }}{% endif %}"><span class="hint">The server downloads the image once. Customers' browsers never load it from your site.</span></div>
+    {% if can_edit %}<div class="row"><button class="btn" type="submit">Save logo</button>{% if !logo.is_empty() %}<button class="btn btn-ghost" type="submit" name="remove" value="1">Remove logo</button>{% endif %}</div>{% endif %}
+    </fieldset>
+  </form>
+</section>
+
+<section class="card">
+  <div class="card-head"><div><h2>Look</h2><p>The store name is the project name.</p></div></div>
+  <form class="card-pad form" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/settings/checkout">
+    <fieldset {% if !can_edit %}disabled{% endif %} class="form">
+    <div class="field">
+      <span class="label">Theme</span>
+      <div class="seg">
+        <label><input type="radio" name="theme" value="auto"{% if b.theme == "auto" %} checked{% endif %}><span>Auto</span></label>
+        <label><input type="radio" name="theme" value="light"{% if b.theme == "light" %} checked{% endif %}><span>Light</span></label>
+        <label><input type="radio" name="theme" value="dark"{% if b.theme == "dark" %} checked{% endif %}><span>Dark</span></label>
+      </div>
+      <span class="hint">Auto follows the customer's system setting.</span>
+    </div>
+    <div class="field">
+      <label for="ac">Accent colour</label>
+      <div class="row row-tight">
+        <input id="ac" class="color" name="accent" type="color" value="{% if accent.is_empty() %}#0a0a0a{% else %}{{ accent }}{% endif %}">
+        <label class="check"><input type="checkbox" name="accent_default" value="1"{% if accent.is_empty() %} checked{% endif %}> Use black and white</label>
+      </div>
+      <span class="hint">For buttons, progress and the countdown. Paid stays green and failed stays red. Dark mode gets a lighter shade when needed.</span>
+    </div>
+    <div class="field"><label for="msg">Message on the checkout</label><textarea id="msg" name="message" maxlength="280" rows="3" placeholder="Orders ship within two days.">{% if let Some(m) = b.message %}{{ m }}{% endif %}</textarea><span class="hint">At most 280 characters.</span></div>
+    <div class="row">
+      <div class="field"><label for="se">Support email</label><input id="se" name="support_email" type="email" value="{% if let Some(v) = b.support_email %}{{ v }}{% endif %}" placeholder="help@shop.example"></div>
+      <div class="field"><label for="su">Support page</label><input id="su" name="support_url" type="url" value="{% if let Some(v) = b.support_url %}{{ v }}{% endif %}" placeholder="https://shop.example/help"></div>
+    </div>
+    <hr>
+    <div class="field"><label for="ru">Return URL</label><input id="ru" name="return_url" type="url" value="{% if let Some(v) = b.return_url %}{{ v }}{% endif %}" placeholder="https://shop.example/orders"><span class="hint">The "Return to {{ shell.project_name }}" button opens it. A payment's own <code>success_url</code> or <code>cancel_url</code> comes first. Each payment keeps the URL of the time it was created.</span></div>
+    <div class="field"><label for="rh">Allowed return hosts</label><textarea id="rh" class="mono" name="return_hosts" rows="3" placeholder="shop.example&#10;www.shop.example">{{ hosts }}</textarea><span class="hint">One host per line. When you set hosts, the API refuses a <code>success_url</code> or <code>cancel_url</code> on any other host.</span></div>
+    {% if can_edit %}<div><button class="btn" type="submit">Save</button></div>{% endif %}
+    </fieldset>
+  </form>
+</section>
+</div>
+
+<aside class="split-side">
+  <div class="preview">
+    <div class="preview-head">
+      <h2>Preview</h2>
+      <nav class="preview-tabs" aria-label="Preview state">
+        <a href="{{ shell.base }}/dashboard/p/{{ pid }}/settings/preview?state=waiting" target="preview">Waiting</a>
+        <a href="{{ shell.base }}/dashboard/p/{{ pid }}/settings/preview?state=confirming" target="preview">Confirming</a>
+        <a href="{{ shell.base }}/dashboard/p/{{ pid }}/settings/preview?state=paid" target="preview">Paid</a>
+        <a href="{{ shell.base }}/dashboard/p/{{ pid }}/settings/preview?state=expired" target="preview">Expired</a>
+      </nav>
+    </div>
+    <iframe class="preview-frame" name="preview" src="{{ preview }}" title="Checkout preview"></iframe>
+    <p class="hint">Sample data with your saved settings. Save to update it.</p>
+  </div>
+</aside>
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+# The image needs the Rust workspace and the deposit contract artifact only.
+*
+!Cargo.toml
+!Cargo.lock
+!rust-toolchain.toml
+!crates/
+!contracts/out-min/
+**/target
+**/.DS_Store

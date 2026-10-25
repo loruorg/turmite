@@ -1,0 +1,4 @@
+<header class="store">
+  <span class="logo{% if look.logo.is_empty() %} logo-initial{% endif %}" aria-hidden="true">{% if !look.logo.is_empty() %}<img src="{{ look.logo }}" alt="">{% else %}{{ look.initial }}{% endif %}</span>
+  <span class="store-name">{{ look.store }}</span>
+</header>

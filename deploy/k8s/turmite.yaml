@@ -1,0 +1,184 @@
+# Turmite on Kubernetes: PostgreSQL, the API and the worker.
+#
+#   docker run --rm -it -v "$PWD:/data" --user "$(id -u):$(id -g)" ghcr.io/loruorg/turmite:0.1.0 \
+#     init --site-url https://pay.example.com
+#   kubectl create namespace turmite
+#   kubectl -n turmite create secret generic turmite-env --from-env-file=.env
+#   kubectl -n turmite create secret generic turmite-hot --from-file=secrets/
+#   kubectl apply -f deploy/k8s/turmite.yaml
+#
+# Set the image tag and the Ingress host below. TLS comes from your ingress controller
+# (for example cert-manager). PostgreSQL keeps its data on a PersistentVolumeClaim of the
+# default storage class; a managed PostgreSQL works too (change TURMITE_DATABASE_URL in
+# the secret and delete the postgres StatefulSet). Run one worker only.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: turmite
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: turmite
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels: { app: postgres }
+  template:
+    metadata:
+      labels: { app: postgres }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:18.6-trixie
+          env:
+            - { name: POSTGRES_USER, value: turmite }
+            - { name: POSTGRES_DB, value: turmite }
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: turmite-env, key: POSTGRES_PASSWORD }
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "turmite", "-d", "turmite"] }
+            periodSeconds: 5
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql }
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 20Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: turmite
+spec:
+  selector: { app: postgres }
+  ports:
+    - port: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: turmite
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: turmite-api }
+  template:
+    metadata:
+      labels: { app: turmite-api }
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: api
+          image: ghcr.io/loruorg/turmite:0.1.0
+          args: ["serve", "--role", "api"]
+          envFrom:
+            - secretRef: { name: turmite-env }
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - { name: tmp, emptyDir: {} }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: turmite
+spec:
+  replicas: 1
+  # Never two workers at once: stop the old pod before the new one starts.
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app: turmite-worker }
+  template:
+    metadata:
+      labels: { app: turmite-worker }
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: worker
+          image: ghcr.io/loruorg/turmite:0.1.0
+          args: ["serve", "--role", "worker"]
+          envFrom:
+            - secretRef: { name: turmite-env }
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+            - { name: hot, mountPath: /secrets, readOnly: true }
+      volumes:
+        - { name: tmp, emptyDir: {} }
+        - name: hot
+          secret:
+            secretName: turmite-hot
+            defaultMode: 0400
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: turmite
+spec:
+  selector: { app: turmite-api }
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: turmite
+  namespace: turmite
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 4m
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: pay.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port: { number: 80 }

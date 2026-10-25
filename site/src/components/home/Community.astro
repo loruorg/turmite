@@ -1,0 +1,88 @@
+---
+import Icon from '../Icon.astro';
+---
+
+<section class="community" aria-labelledby="community-title">
+  <canvas data-ant aria-hidden="true"></canvas>
+  <div class="wrap inner">
+    <span class="sec-num">08 Open source</span>
+    <h2 id="community-title">A community project.</h2>
+    <p>
+      Turmite is MIT licensed. There is no hosted service, no fee and no account. Read the code, open an issue or send a
+      pull request.
+    </p>
+    <div class="cta">
+      <a class="btn btn-inv" href="https://github.com/loruorg/turmite"><Icon name="github" /> loruorg/turmite</a>
+      <a class="btn btn-ghost" href="/docs/contributing/">Contributing guide</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .community {
+    position: relative;
+    overflow: hidden;
+    background: #000;
+    color: #fff;
+    padding-block: var(--space-10);
+  }
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .inner {
+    position: relative;
+    max-width: calc(760px + 2 * var(--space-5));
+    margin-inline: auto;
+    text-align: center;
+    display: grid;
+    justify-items: center;
+    gap: var(--space-5);
+  }
+  .sec-num {
+    color: #a6a6a6;
+  }
+  .sec-num::before {
+    background: #fff;
+  }
+  h2 {
+    color: #fff;
+    font-size: var(--step-5);
+    letter-spacing: -0.05em;
+    line-height: 0.98;
+  }
+  p {
+    font-size: 1.1875rem;
+    line-height: 1.55;
+    color: #b8b8b8;
+    max-width: 52ch;
+  }
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+  }
+  .btn-inv {
+    background: #fff;
+    color: #000;
+    border-color: #fff;
+  }
+  .btn-inv:hover {
+    background: #000;
+    color: #fff;
+  }
+  .btn-ghost {
+    background: transparent;
+    color: #fff;
+    border-color: #555;
+  }
+  .btn-ghost:hover {
+    background: #fff;
+    color: #000;
+    border-color: #fff;
+  }
+</style>

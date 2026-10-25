@@ -1,0 +1,57 @@
+---
+import Base from '../layouts/Base.astro';
+
+// "404" in a 3 x 5 pixel font.
+const four = ['X.X', 'X.X', 'XXX', '..X', '..X'];
+const zero = ['XXX', 'X.X', 'X.X', 'X.X', 'XXX'];
+let d = '';
+[four, zero, four].forEach((glyph, g) =>
+  glyph.forEach((row, y) =>
+    [...row].forEach((c, x) => {
+      if (c === 'X') d += `M${g * 4 + x} ${y}h1v1h-1z`;
+    }),
+  ),
+);
+---
+
+<Base title="Page not found" description="This page does not exist." themed>
+  <main id="main" class="nf wrap">
+    <svg class="nf-grid" viewBox="0 0 11 5" aria-hidden="true"><path d={d} /></svg>
+    <h1>Page not found</h1>
+    <p>The turmite walked off the grid. The page you asked for does not exist or has moved.</p>
+    <div class="nf-actions">
+      <a class="btn btn-primary" href="/">Home</a>
+      <a class="btn" href="/docs/">Docs</a>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .nf {
+    padding-block: var(--space-10);
+  }
+  .nf > * {
+    max-width: 640px;
+  }
+  .nf-grid {
+    width: 140px;
+    height: auto;
+    fill: var(--fg);
+    margin-bottom: var(--space-7);
+    shape-rendering: crispEdges;
+  }
+  h1 {
+    font-size: var(--step-4);
+    letter-spacing: -0.035em;
+  }
+  p {
+    margin-top: var(--space-4);
+    font-size: 1.125rem;
+    color: var(--muted);
+  }
+  .nf-actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+  }
+</style>

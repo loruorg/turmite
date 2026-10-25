@@ -1,0 +1,511 @@
+---
+import Icon from '../Icon.astro';
+
+// A QR-like pixel block for the mock. Deterministic, so the build output is stable.
+const N = 25;
+let seed = 7;
+const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+let qr = '';
+const finder = (x: number, y: number) => {
+  qr += `M${x} ${y}h7v7h-7zM${x + 1} ${y + 1}v5h5v-5zM${x + 2} ${y + 2}h3v3h-3z`;
+};
+const inFinder = (x: number, y: number) =>
+  (x < 8 && y < 8) || (x >= N - 8 && y < 8) || (x < 8 && y >= N - 8);
+for (let y = 0; y < N; y++)
+  for (let x = 0; x < N; x++) if (!inFinder(x, y) && rnd() > 0.52) qr += `M${x} ${y}h1v1h-1z`;
+finder(0, 0);
+finder(N - 7, 0);
+finder(0, N - 7);
+---
+
+<section class="section" aria-labelledby="checkout-title">
+  <div class="wrap split">
+    <div>
+      <header class="sec-head">
+        <span class="sec-num">02 Checkout</span>
+        <h2 id="checkout-title">A checkout that works with JavaScript off.</h2>
+        <p>
+          The payment page is plain HTML and CSS. A small frame reloads the status every four seconds. The motion is pure
+          CSS and stops when the visitor asks for reduced motion.
+        </p>
+      </header>
+      <ul class="ticks">
+        <li>Strict CSP. No third-party requests, fonts or scripts.</li>
+        <li>Your store name, logo, accent colour and light or dark theme.</li>
+        <li>QR code as inline SVG. Countdown to expiry in CSS.</li>
+        <li>A return button to your shop when the payment is complete.</li>
+      </ul>
+      <p class="more-row"><a class="more" href="/docs/checkout/">Checkout pages <Icon name="arrow" /></a></p>
+    </div>
+    <div class="stage">
+      <div class="mock" role="img" aria-label="Mock of a Turmite payment page. The status goes from waiting, to confirming 1 of 3, 2 of 3 and 3 of 3, then to paid.">
+        <div class="mock-head">
+          <span class="store-logo" aria-hidden="true"></span>
+          <span class="store">Example Store</span>
+          <span class="net">Bitcoin</span>
+        </div>
+        <div class="amount">
+          <span class="lbl">Send exactly</span>
+          <span class="val">0.00041235 <small>BTC</small></span>
+          <span class="fiat">25.00 USD</span>
+        </div>
+        <div class="pay">
+          <svg class="qr" viewBox={`-1 -1 ${N + 2} ${N + 2}`} aria-hidden="true" shape-rendering="crispEdges">
+            <path d={qr} fill="currentColor" fill-rule="evenodd"></path>
+          </svg>
+          <div class="addr">
+            <span class="lbl">To this address</span>
+            <code>bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</code>
+            <span class="lbl expiry">Expires in 15 min</span>
+            <span class="timer" aria-hidden="true"><span></span></span>
+          </div>
+        </div>
+        <div class="status" aria-hidden="true">
+          <div class="st st-wait">
+            <span class="pulse"></span>
+            <span>Waiting for payment</span>
+          </div>
+          <div class="st st-conf">
+            <span class="conf-text">
+              Confirming&nbsp;<span class="cnt">
+                <span class="c1">1</span><span class="c2">2</span><span class="c3">3</span>
+              </span>/3
+            </span>
+            <span class="segs"><i class="s1"></i><i class="s2"></i><i class="s3"></i></span>
+          </div>
+          <div class="st st-paid">
+            <svg viewBox="0 0 24 24" class="check"><circle cx="12" cy="12" r="10.5"></circle><path d="m7 12.4 3.3 3.3L17.2 8.8"></path></svg>
+            <span>Paid</span>
+            <span class="ret">Return to Example Store</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .more-row {
+    margin-top: var(--space-6);
+  }
+  .stage {
+    display: grid;
+    place-items: center;
+    padding: var(--space-8) var(--space-5);
+    background:
+      linear-gradient(var(--line) 1px, transparent 1px) 0 0 / 24px 24px,
+      linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0 / 24px 24px,
+      var(--surface);
+    border: 1px solid var(--line);
+  }
+  .mock {
+    --cycle: 12s;
+    width: min(400px, 100%);
+    background: var(--bg);
+    border: 1px solid var(--fg);
+    box-shadow: 10px 10px 0 var(--fg);
+    font-size: 0.875rem;
+  }
+  .mock-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .store-logo {
+    width: 22px;
+    height: 22px;
+    background:
+      linear-gradient(var(--fg), var(--fg)) 0 0 / 10px 10px no-repeat,
+      linear-gradient(var(--fg), var(--fg)) 12px 12px / 10px 10px no-repeat;
+  }
+  .store {
+    font-weight: 600;
+  }
+  .net {
+    margin-left: auto;
+    font: 500 0.6875rem var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .amount {
+    display: grid;
+    gap: 2px;
+    padding: 18px 18px 6px;
+  }
+  .lbl {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .val {
+    font-size: 1.625rem;
+    font-weight: 650;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+  .val small {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .fiat {
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+  .pay {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 16px;
+    padding: 14px 18px 18px;
+  }
+  .qr {
+    width: 112px;
+    height: 112px;
+    color: var(--fg);
+  }
+  .addr {
+    display: grid;
+    align-content: start;
+    gap: 4px;
+  }
+  .addr code {
+    font-size: 0.75rem;
+    line-height: 1.5;
+    word-break: break-all;
+    color: var(--fg);
+  }
+  .expiry {
+    margin-top: 6px;
+  }
+  .timer {
+    display: block;
+    height: 3px;
+    background: var(--line);
+    overflow: hidden;
+  }
+  .timer span {
+    display: block;
+    height: 100%;
+    background: var(--fg);
+    transform-origin: left;
+    animation: drain var(--cycle) linear infinite;
+  }
+  .status {
+    position: relative;
+    height: 64px;
+    border-top: 1px solid var(--line);
+  }
+  .st {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 18px;
+    font-weight: 550;
+    opacity: 0;
+  }
+  .st-wait {
+    animation: show-wait var(--cycle) linear infinite;
+  }
+  .st-conf {
+    animation: show-conf var(--cycle) linear infinite;
+    justify-content: space-between;
+  }
+  .st-paid {
+    animation: show-paid var(--cycle) linear infinite;
+    color: var(--paid);
+  }
+  .pulse {
+    position: relative;
+    width: 10px;
+    height: 10px;
+    background: var(--fg);
+  }
+  .pulse::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border: 1px solid var(--fg);
+    animation: pulse 1.4s var(--ease-out) infinite;
+  }
+  .cnt {
+    position: relative;
+    display: inline-block;
+    width: 0.62em;
+    height: 1em;
+    vertical-align: -0.12em;
+    font-variant-numeric: tabular-nums;
+  }
+  .cnt span {
+    position: absolute;
+    inset: 0;
+    line-height: 1;
+    opacity: 0;
+  }
+  .c1 {
+    animation: c1 var(--cycle) linear infinite;
+  }
+  .c2 {
+    animation: c2 var(--cycle) linear infinite;
+  }
+  .c3 {
+    animation: c3 var(--cycle) linear infinite;
+  }
+  .segs {
+    display: flex;
+    gap: 4px;
+  }
+  .segs i {
+    width: 36px;
+    height: 6px;
+    background: var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+  .segs i::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--fg);
+    transform-origin: left;
+    transform: scaleX(0);
+  }
+  .s1::after {
+    animation: s1 var(--cycle) var(--ease-out) infinite;
+  }
+  .s2::after {
+    animation: s2 var(--cycle) var(--ease-out) infinite;
+  }
+  .s3::after {
+    animation: s3 var(--cycle) var(--ease-out) infinite;
+  }
+  .check {
+    width: 26px;
+    height: 26px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+  }
+  .check circle {
+    stroke-dasharray: 66;
+    stroke-dashoffset: 66;
+    animation: draw-c var(--cycle) var(--ease-out) infinite;
+  }
+  .check path {
+    stroke-dasharray: 16;
+    stroke-dashoffset: 16;
+    animation: draw-p var(--cycle) var(--ease-out) infinite;
+  }
+  .ret {
+    margin-left: auto;
+    padding: 7px 10px;
+    background: var(--fg);
+    color: var(--bg);
+    font-size: 0.75rem;
+    font-weight: 550;
+  }
+
+  /* 12 s cycle: waiting 0-25 %, confirming 25-75 % (1/3, 2/3, 3/3), paid 75-98 %. */
+  @keyframes show-wait {
+    0%,
+    24% {
+      opacity: 1;
+    }
+    25.5%,
+    99% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes show-conf {
+    0%,
+    24.5% {
+      opacity: 0;
+    }
+    26%,
+    74% {
+      opacity: 1;
+    }
+    75.5%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes show-paid {
+    0%,
+    75% {
+      opacity: 0;
+    }
+    76.5%,
+    98% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes c1 {
+    0%,
+    24.9% {
+      opacity: 0;
+    }
+    25%,
+    41.6% {
+      opacity: 1;
+    }
+    41.7%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes c2 {
+    0%,
+    41.6% {
+      opacity: 0;
+    }
+    41.7%,
+    58.3% {
+      opacity: 1;
+    }
+    58.4%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes c3 {
+    0%,
+    58.3% {
+      opacity: 0;
+    }
+    58.4%,
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes s1 {
+    0%,
+    25% {
+      transform: scaleX(0);
+    }
+    29%,
+    99% {
+      transform: scaleX(1);
+    }
+    100% {
+      transform: scaleX(0);
+    }
+  }
+  @keyframes s2 {
+    0%,
+    41.7% {
+      transform: scaleX(0);
+    }
+    45.7%,
+    99% {
+      transform: scaleX(1);
+    }
+    100% {
+      transform: scaleX(0);
+    }
+  }
+  @keyframes s3 {
+    0%,
+    58.4% {
+      transform: scaleX(0);
+    }
+    62.4%,
+    99% {
+      transform: scaleX(1);
+    }
+    100% {
+      transform: scaleX(0);
+    }
+  }
+  @keyframes draw-c {
+    0%,
+    76% {
+      stroke-dashoffset: 66;
+    }
+    81%,
+    100% {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes draw-p {
+    0%,
+    80% {
+      stroke-dashoffset: 16;
+    }
+    84%,
+    100% {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes drain {
+    from {
+      transform: scaleX(0.97);
+    }
+    to {
+      transform: scaleX(0.9);
+    }
+  }
+  @keyframes pulse {
+    from {
+      transform: scale(1);
+      opacity: 1;
+    }
+    to {
+      transform: scale(2.4);
+      opacity: 0;
+    }
+  }
+  /* Reduced motion: show the final state. */
+  @media (prefers-reduced-motion: reduce) {
+    .st-wait,
+    .st-conf {
+      animation: none;
+      opacity: 0;
+    }
+    .st-paid {
+      animation: none;
+      opacity: 1;
+    }
+    .check circle,
+    .check path {
+      animation: none;
+      stroke-dashoffset: 0;
+    }
+    .timer span {
+      animation: none;
+      transform: scaleX(0.95);
+    }
+  }
+  @media (max-width: 520px) {
+    .stage {
+      padding: var(--space-6) var(--space-4) var(--space-7);
+      margin-inline: calc(-1 * var(--space-5));
+      border-inline: 0;
+    }
+    .mock {
+      box-shadow: 6px 6px 0 var(--fg);
+    }
+    .pay {
+      grid-template-columns: 92px minmax(0, 1fr);
+    }
+    .qr {
+      width: 92px;
+      height: 92px;
+    }
+    .segs i {
+      width: 24px;
+    }
+    .ret {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,6 @@
+<nav class="tabs" aria-label="Settings">
+  <a href="{{ shell.base }}/dashboard/p/{{ pid }}/settings"{% if tab == "general" %} aria-current="page"{% endif %}>General</a>
+  <a href="{{ shell.base }}/dashboard/p/{{ pid }}/settings/checkout"{% if tab == "checkout" %} aria-current="page"{% endif %}>Checkout</a>
+  <a href="{{ shell.base }}/dashboard/p/{{ pid }}/settings/exchange"{% if tab == "exchange" %} aria-current="page"{% endif %}>Exchange</a>
+  <a href="{{ shell.base }}/dashboard/p/{{ pid }}/settings/domain"{% if tab == "domain" %} aria-current="page"{% endif %}>Domain</a>
+</nav>

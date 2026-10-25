@@ -1,0 +1,107 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import '../../styles/docs.css';
+
+const posts = (await getCollection('blog')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+---
+
+<Base title="Blog" description="Release notes and news from the Turmite project." current="blog" themed>
+  <main id="main" class="blog wrap">
+    <header class="blog-head">
+      <span class="eyebrow">Blog</span>
+      <h1>Releases and notes</h1>
+      <p class="lead">News from the Turmite project. Subscribe with <a href="/rss.xml">RSS</a>.</p>
+    </header>
+    <ol class="posts">
+      {
+        posts.map((p) => (
+          <li>
+            <a href={`/blog/${p.id}/`}>
+              <time datetime={p.data.date.toISOString().slice(0, 10)}>{fmt(p.data.date)}</time>
+              <span class="body">
+                <h2>{p.data.title}</h2>
+                <p>{p.data.description}</p>
+              </span>
+              <span class="go" aria-hidden="true">Read</span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+  </main>
+</Base>
+
+<style>
+  .blog {
+    padding-block: var(--space-9) var(--space-10);
+    min-height: 60vh;
+  }
+  .blog-head {
+    max-width: 720px;
+  }
+  .blog-head h1 {
+    font-size: var(--step-5);
+    letter-spacing: -0.05em;
+    line-height: 0.98;
+  }
+  .blog-head .lead {
+    margin-top: var(--space-5);
+    font-size: 1.1875rem;
+    color: var(--muted);
+  }
+  .blog-head .lead a {
+    color: var(--fg);
+    text-underline-offset: 3px;
+  }
+  .posts {
+    list-style: none;
+    margin: var(--space-9) 0 0;
+    padding: 0;
+    border-top: 1px solid var(--fg);
+  }
+  .posts a {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr) auto;
+    gap: var(--space-2) var(--space-6);
+    align-items: baseline;
+    padding: var(--space-6) 0;
+    border-bottom: 1px solid var(--line);
+    text-decoration: none;
+  }
+  .posts time {
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+  .posts h2 {
+    font-size: 1.625rem;
+    letter-spacing: -0.03em;
+  }
+  .posts p {
+    margin-top: var(--space-2);
+    color: var(--muted);
+  }
+  .go {
+    font-size: 0.875rem;
+    font-weight: 550;
+    color: var(--fg);
+  }
+  .go::after {
+    content: ' >';
+  }
+  .posts a:hover h2 {
+    text-decoration: underline;
+    text-underline-offset: 5px;
+    text-decoration-thickness: 1px;
+  }
+  @media (max-width: 760px) {
+    .posts a {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .go {
+      display: none;
+    }
+  }
+</style>

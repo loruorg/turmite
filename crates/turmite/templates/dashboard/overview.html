@@ -1,0 +1,50 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head">
+  <div><h1>{{ shell.project_name }}</h1><p>Last 30 days.</p></div>
+  <div class="actions"><a class="btn btn-2" href="{{ shell.base }}/dashboard/p/{{ pid }}/invoices">New payment link</a></div>
+</header>
+
+{% if !stuck.is_empty() %}
+<section class="alert" role="alert" style="margin-bottom:16px">
+  <p>Funds wait at {{ stuck.len() }} deposit {% if stuck.len() == 1 %}address{% else %}addresses{% endif %}. A sweep to your wallet is late or failed.</p>
+  <ul>{% for s in stuck %}<li><a href="{{ s.href }}">Payment {{ s.id }}</a>: {{ s.text }}</li>{% endfor %}</ul>
+</section>
+{% endif %}
+
+<div class="grid grid-4">
+  <div class="card stat"><div class="stat-label">Volume</div><div class="stat-value">{{ volume }}</div><div class="stat-sub">{% if other_currencies > 0 %}and {{ other_currencies }} more {% if other_currencies == 1 %}currency{% else %}currencies{% endif %}{% else %}paid{% endif %}</div></div>
+  <div class="card stat"><div class="stat-label">Paid</div><div class="stat-value">{{ paid }}</div><div class="stat-sub">finished payments</div></div>
+  <div class="card stat"><div class="stat-label">Open</div><div class="stat-value">{{ open }}</div><div class="stat-sub">waiting or confirming</div></div>
+  <div class="card stat"><div class="stat-label">Expired</div><div class="stat-value">{{ expired }}</div><div class="stat-sub">expired or failed</div></div>
+</div>
+
+<section class="card card-pad activity">
+  <div class="activity-head"><h2>Activity</h2><div class="legend"><span class="key key-c"></span>Created <span class="key key-p"></span>Paid</div></div>
+  {% if created_30d == 0 %}<p class="dim small">No payments in the last 30 days.</p>{% endif %}
+  <svg class="chart" viewBox="0 0 300 64" preserveAspectRatio="none" role="img" aria-label="Payments per day, last 30 days">
+    {% for b in bars %}<g style="animation-delay:{{ b.delay }}ms"><title>{{ b.title }}</title><rect class="bar-t" x="{{ b.x }}" y="63" width="8" height="1"/><rect class="bar-c" x="{{ b.x }}" y="{{ 64 - b.created }}" width="8" height="{{ b.created }}"/><rect class="bar-p" x="{{ b.x }}" y="{{ 64 - b.paid }}" width="8" height="{{ b.paid }}"/><rect class="bar-hit" x="{{ b.x }}" y="0" width="10" height="64"/></g>{% endfor %}
+  </svg>
+  <div class="chart-axis"><span>30 days ago</span><span>Today</span></div>
+</section>
+
+{% if !setup_done %}
+<section class="card section" style="margin-top:20px">
+  <div class="card-head"><div><h2>Get ready to take payments</h2><p>Finish these steps once per project.</p></div></div>
+  <ol class="steps-list">
+    {% for s in steps %}
+    <li class="{% if s.done %}done{% endif %}"><span class="tick" aria-hidden="true"></span><a href="{{ s.href }}">{{ s.label }}</a>{% if s.done %}<span class="sr">Done</span>{% endif %}</li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}
+
+<div class="section-title"><h2>Recent payments</h2><a class="small" href="{{ shell.base }}/dashboard/p/{{ pid }}/payments">View all</a></div>
+<section class="card">
+  {% if recent.is_empty() %}
+    {% include "dashboard/empty.html" %}
+  {% else %}
+    {% include "dashboard/payment_table.html" %}
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head"><div><h1>Team</h1><p>People who can open this project. Server admins can open every project.</p></div></header>
+<section class="card">
+  {% if members.is_empty() %}
+  <div class="empty"><h3>No members</h3><p>Only server admins can open this project.</p></div>
+  {% else %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Email</th><th>Role</th><th></th></tr></thead>
+    <tbody>
+    {% for m in members %}
+      <tr><td>{{ m.email }}</td><td><span class="badge badge-plain">{% if m.role == "project_admin" %}Project admin{% else if m.role == "developer" %}Developer{% else %}Read only{% endif %}</span></td>
+      <td class="num">{% if can_edit %}<form class="inline" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/team/{{ m.user_id }}/remove" data-confirm="Remove {{ m.email }}?"><button class="btn btn-sm btn-ghost" type="submit">Remove</button></form>{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% endif %}
+</section>
+{% if can_edit %}
+<section class="card">
+  <div class="card-head"><div><h2>Add a member</h2><p>The user must exist. Server admins add users under Users.</p></div></div>
+  <form class="card-pad row" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/team">
+    <div class="field"><label for="em">Email</label><input id="em" name="email" type="email" required></div>
+    <div class="field"><label for="ro">Role</label><select id="ro" name="role"><option value="read_only">Read only</option><option value="developer">Developer</option><option value="project_admin">Project admin</option></select></div>
+    <div class="field" style="max-width:130px"><label for="tc">Two-factor code</label><input id="tc" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"><span class="hint">Needed for project admin.</span></div>
+    <button class="btn" type="submit">Add</button>
+  </form>
+  <div class="card-pad small dim" style="border-top:1px solid var(--line)">Project admin: settings, wallets, API keys, payouts. Developer: payments, webhooks, revoking keys. Read only: view.</div>
+</section>
+{% endif %}
+{% endblock %}

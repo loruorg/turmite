@@ -1,0 +1,113 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+
+interface Props {
+  current?: 'home' | 'docs' | 'blog';
+  tools?: boolean;
+}
+const { current = 'home', tools = false } = Astro.props;
+---
+
+<header class="site-header">
+  <div class={tools ? 'bar bar-docs' : 'wrap bar'}>
+    <a class="brand" href="/" aria-label="Turmite home"><Logo /></a>
+    {
+      tools && (
+        <button class="search-trigger" type="button" data-search-open aria-haspopup="dialog" hidden>
+          <Icon name="search" size={16} />
+          <span>Search docs</span>
+          <kbd>/</kbd>
+        </button>
+      )
+    }
+    <nav class="site-nav" aria-label="Main">
+      <a href="/docs/" aria-current={current === 'docs' ? 'page' : undefined}>Docs</a>
+      <a href="/blog/" aria-current={current === 'blog' ? 'page' : undefined}>Blog</a>
+      <a href="https://github.com/loruorg/turmite" class="gh"><Icon name="github" /><span>GitHub</span></a>
+      {
+        tools && (
+          <button class="icon-btn" type="button" data-theme-toggle aria-label="Switch colour theme" hidden>
+            <Icon name="moon" class="i-moon" />
+            <Icon name="sun" class="i-sun" />
+          </button>
+        )
+      }
+    </nav>
+  </div>
+</header>
+
+<style>
+  .bar-docs {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    gap: var(--space-5);
+    padding-inline: var(--space-5);
+  }
+  .search-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 36px;
+    width: min(320px, 100%);
+    margin-left: calc(var(--space-6) + 40px);
+    padding: 0 8px 0 12px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--muted);
+    font: 450 0.875rem var(--sans);
+    cursor: pointer;
+    transition: border-color 120ms;
+  }
+  .search-trigger:hover {
+    border-color: var(--line-strong);
+  }
+  .search-trigger span {
+    flex: 1;
+    text-align: left;
+  }
+  .search-trigger kbd {
+    display: inline-grid;
+    place-items: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border: 1px solid var(--line-strong);
+    background: var(--bg);
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .icon-btn :global(.i-sun) {
+    display: none;
+  }
+  :global(:root[data-theme='dark']) .icon-btn :global(.i-sun) {
+    display: block;
+  }
+  :global(:root[data-theme='dark']) .icon-btn :global(.i-moon) {
+    display: none;
+  }
+  @media (max-width: 900px) {
+    .search-trigger {
+      flex: none;
+      margin-left: auto;
+      width: 36px;
+      padding: 0;
+      justify-content: center;
+      border-color: transparent;
+      background: none;
+    }
+    .search-trigger span,
+    .search-trigger kbd {
+      display: none;
+    }
+    .bar-docs .site-nav {
+      margin-left: 0;
+    }
+  }
+  @media (max-width: 560px) {
+    .gh span {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,315 @@
+---
+import { Code } from 'astro:components';
+import type { ApiModel } from '../../lib/openapi';
+import { slugify } from '../../lib/openapi';
+import { monoLight, monoDark } from '../../lib/shiki-themes.mjs';
+const themes = { light: monoLight, dark: monoDark };
+
+interface Props {
+  api: ApiModel | null;
+}
+const { api } = Astro.props;
+---
+
+{
+  api ? (
+    <div class="api">
+      {api.groups.map((g) => (
+        <section class="api-group">
+          <h2 id={g.slug}>{g.name}</h2>
+          {g.description && <p>{g.description}</p>}
+          {g.ops.map((op) => (
+            <article class="op" aria-labelledby={slugify(op.id)}>
+              <h3 id={slugify(op.id)}>
+                <span class={`m m-${op.method.toLowerCase()}`}>{op.method}</span>
+                <code class="p">{op.path}</code>
+              </h3>
+              {op.summary && <p class="op-summary">{op.summary}</p>}
+              {op.description && <p>{op.description}</p>}
+              {op.auth.length > 0 && (
+                <p class="op-auth">
+                  Auth:{' '}
+                  {op.auth.map((a, i) => (
+                    <>
+                      {i > 0 && ', '}
+                      <code>{a}</code>
+                    </>
+                  ))}
+                </p>
+              )}
+              {op.params.length > 0 && (
+                <div class="fields">
+                  <p class="fields-title">Parameters</p>
+                  <dl>
+                    {op.params.map((p) => (
+                      <div class="field">
+                        <dt>
+                          <code>{p.name}</code>
+                          <span class="meta">
+                            {p.in}
+                            {p.required && <span class="req">required</span>}
+                          </span>
+                        </dt>
+                        <dd>
+                          <span class="type">{p.type}</span>
+                          {p.description && <span class="desc">{p.description}</span>}
+                          {p.values && (
+                            <span class="values">
+                              {p.values.map((v) => (
+                                <code>{v}</code>
+                              ))}
+                            </span>
+                          )}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              )}
+              {op.body.length > 0 && (
+                <div class="fields">
+                  <p class="fields-title">Body</p>
+                  <dl>
+                    {op.body.map((f) => (
+                      <div class="field" style={`--depth:${f.depth}`}>
+                        <dt>
+                          <code>{f.name}</code>
+                          {f.required && (
+                            <span class="meta">
+                              <span class="req">required</span>
+                            </span>
+                          )}
+                        </dt>
+                        <dd>
+                          <span class="type">{f.type}</span>
+                          {f.description && <span class="desc">{f.description}</span>}
+                          {f.values && (
+                            <span class="values">
+                              {f.values.map((v) => (
+                                <code>{v}</code>
+                              ))}
+                            </span>
+                          )}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              )}
+              {op.bodyExample && (
+                <div class="ex">
+                  <p class="ex-label">Request body</p>
+                  <Code code={op.bodyExample} lang="json" themes={themes} />
+                </div>
+              )}
+              <div class="resps">
+                {op.responses.map((r) =>
+                  r.example ? (
+                    <details class="resp" open={r.code.startsWith('2') ? true : undefined}>
+                      <summary>
+                        <code class={`rc c${r.code[0]}`}>{r.code}</code>
+                        <span>{r.description}</span>
+                      </summary>
+                      <Code code={r.example} lang="json" themes={themes} />
+                    </details>
+                  ) : (
+                    <div class="resp resp-plain">
+                      <code class={`rc c${r.code[0]}`}>{r.code}</code>
+                      <span>{r.description}</span>
+                    </div>
+                  ),
+                )}
+              </div>
+            </article>
+          ))}
+        </section>
+      ))}
+    </div>
+  ) : (
+    <div class="api-missing">
+      <p>
+        The generated reference appears here when <code>openapi.yaml</code> is in the repository. Until then, use the{' '}
+        <a href="/docs/merchant-api/">Merchant API guide</a>.
+      </p>
+    </div>
+  )
+}
+
+<style>
+  .api-group + .api-group {
+    margin-top: 1.5em;
+  }
+  .op {
+    margin-top: 2em;
+    padding-top: 1.5em;
+    border-top: 1px solid var(--line);
+  }
+  .op > * + * {
+    margin-top: 0.9em;
+  }
+  .op h3 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 0;
+  }
+  .m {
+    display: inline-grid;
+    place-items: center;
+    min-width: 52px;
+    height: 22px;
+    padding: 0 6px;
+    font: 600 0.6875rem/1 var(--mono);
+    letter-spacing: 0.04em;
+    border: 1px solid var(--fg);
+    color: var(--fg);
+  }
+  .m-post,
+  .m-put,
+  .m-patch,
+  .m-delete {
+    background: var(--fg);
+    color: var(--bg);
+  }
+  .op h3 .p {
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+  .op-summary {
+    color: var(--fg);
+    font-weight: 500;
+  }
+  .op-auth {
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+  .fields-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--fg);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--fg);
+  }
+  .fields dl {
+    margin: 0;
+  }
+  .field {
+    display: grid;
+    grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+    gap: 4px var(--space-5);
+    padding: 10px 0 10px calc(var(--depth, 0) * 16px);
+    border-bottom: 1px solid var(--line);
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  .field dt {
+    display: grid;
+    align-content: start;
+    gap: 2px;
+  }
+  .field dt code {
+    justify-self: start;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-weight: 600;
+    word-break: break-all;
+  }
+  .field dd {
+    margin: 0;
+    display: grid;
+    gap: 4px;
+  }
+  .meta {
+    display: flex;
+    gap: 8px;
+    font: 0.75rem var(--mono);
+    color: var(--muted);
+  }
+  .req {
+    color: var(--fg);
+  }
+  .type {
+    font: 0.75rem var(--mono);
+    color: var(--muted);
+  }
+  .desc {
+    color: var(--text);
+  }
+  .values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .values code {
+    font-size: 0.75rem;
+  }
+  @media (max-width: 640px) {
+    .field {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .ex-label {
+    font-size: 0.8125rem;
+    color: var(--muted);
+    margin-bottom: 0.4em;
+  }
+  .resps {
+    border-top: 1px solid var(--line);
+  }
+  .resp {
+    border-bottom: 1px solid var(--line);
+  }
+  .resp summary,
+  .resp-plain {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 10px 0;
+    font-size: 0.875rem;
+    color: var(--muted);
+    cursor: pointer;
+    list-style: none;
+  }
+  .resp-plain {
+    cursor: default;
+  }
+  .resp summary::-webkit-details-marker {
+    display: none;
+  }
+  .resp summary::after {
+    content: '+';
+    margin-left: auto;
+    font-family: var(--mono);
+    color: var(--faint);
+  }
+  .resp[open] summary::after {
+    content: '-';
+  }
+  .resp summary:hover {
+    color: var(--fg);
+  }
+  .resp .rc {
+    flex: none;
+    padding: 0.1em 0.4em;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .resp .c2 {
+    background: var(--fg);
+    color: var(--bg);
+    border-color: var(--fg);
+  }
+  .resp :global(pre) {
+    margin-bottom: 12px;
+  }
+  .api-missing {
+    padding: var(--space-5);
+    border: 1px dashed var(--line-strong);
+    color: var(--muted);
+  }
+</style>

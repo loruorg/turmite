@@ -1,0 +1,36 @@
+---
+import Base from '../layouts/Base.astro';
+import Hero from '../components/home/Hero.astro';
+import Chains from '../components/home/Chains.astro';
+import Flow from '../components/home/Flow.astro';
+import Checkout from '../components/home/Checkout.astro';
+import CodeSample from '../components/home/CodeSample.astro';
+import Migrate from '../components/home/Migrate.astro';
+import Custody from '../components/home/Custody.astro';
+import AnyCoin from '../components/home/AnyCoin.astro';
+import SelfHost from '../components/home/SelfHost.astro';
+import Community from '../components/home/Community.astro';
+import '../styles/home.css';
+---
+
+<Base
+  title="Turmite"
+  description="Turmite is a free, MIT-licensed, self-hosted crypto payment gateway. Bitcoin, Monero, Ethereum, Base, Polygon, BNB Smart Chain, Tron, Solana and TON."
+>
+  <main id="main">
+    <Hero />
+    <Chains />
+    <Flow />
+    <Checkout />
+    <CodeSample />
+    <Migrate />
+    <Custody />
+    <AnyCoin />
+    <SelfHost />
+    <Community />
+  </main>
+</Base>
+
+<script>
+  import '../scripts/home';
+</script>

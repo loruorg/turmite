@@ -1,0 +1,61 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Account</h1>
+    <p>{{ shell.email }} · member since {{ created }}{% if !last_login.is_empty() %} · last sign-in {{ last_login }}{% endif %}</p>
+  </div>
+</header>
+
+<section class="card">
+  <div class="card-head">
+    <div>
+      <h2>Two-factor authentication</h2>
+      <p>Needed to sign in and for every action that moves money or changes keys.</p>
+    </div>
+    {% if totp_enabled %}<span class="badge badge-ok">On</span>{% else %}<span class="badge badge-bad">Off</span>{% endif %}
+  </div>
+  <div class="card-pad">
+    {% if totp_enabled %}
+      <form class="row" method="post" action="{{ shell.base }}/dashboard/account/2fa/disable" data-confirm="Turn off two-factor authentication?">
+        <div class="field"><label for="code-off">Current code</label><input id="code-off" class="mono" name="code" inputmode="numeric" autocomplete="one-time-code" required></div>
+        <button class="btn btn-danger" type="submit">Turn off</button>
+      </form>
+    {% else if totp_pending %}
+      <div class="grid grid-2">
+        <div>
+          <p class="label">1. Scan with an authenticator app</p><br>
+          <div class="qr">{{ totp_qr|safe }}</div><br>
+          <p class="hint">Or enter this key:</p>
+          <div class="secret"><code>{{ totp_key }}</code><button class="btn btn-sm btn-2 copy" type="button" data-copy="{{ totp_key }}" hidden>Copy</button></div>
+        </div>
+        <form class="form" method="post" action="{{ shell.base }}/dashboard/account/2fa/confirm">
+          <p class="label">2. Enter the code it shows</p>
+          <div class="field"><input class="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required></div>
+          <div class="actions">
+            <button class="btn" type="submit">Turn on</button>
+          </div>
+        </form>
+      </div>
+      <br>
+      <form method="post" action="{{ shell.base }}/dashboard/account/2fa/disable"><input type="hidden" name="code" value=""><button class="link" type="submit">Cancel setup</button></form>
+    {% else %}
+      <form method="post" action="{{ shell.base }}/dashboard/account/2fa/start">
+        <button class="btn" type="submit">Set up two-factor</button>
+      </form>
+    {% endif %}
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head"><div><h2>Password</h2><p>At least 12 characters.</p></div></div>
+  <form class="card-pad form" method="post" action="{{ shell.base }}/dashboard/account/password">
+    <div class="field"><label for="current">Current password</label><input id="current" name="current" type="password" autocomplete="current-password" required></div>
+    <div class="row">
+      <div class="field"><label for="password">New password</label><input id="password" name="password" type="password" autocomplete="new-password" minlength="12" required></div>
+      <div class="field"><label for="password2">Repeat</label><input id="password2" name="password2" type="password" autocomplete="new-password" minlength="12" required></div>
+    </div>
+    <div><button class="btn" type="submit">Change password</button></div>
+  </form>
+</section>
+{% endblock %}

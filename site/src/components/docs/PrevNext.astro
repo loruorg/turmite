@@ -1,0 +1,73 @@
+---
+import { docsHref } from '../../lib/docs-nav';
+interface Item {
+  slug: string;
+  title: string;
+}
+interface Props {
+  prev?: Item;
+  next?: Item;
+}
+const { prev, next } = Astro.props;
+---
+
+<nav class="pn" aria-label="Previous and next page">
+  {
+    prev ? (
+      <a class="prev" href={docsHref(prev.slug)} rel="prev">
+        <span>Previous</span>
+        <strong>{prev.title}</strong>
+      </a>
+    ) : (
+      <span />
+    )
+  }
+  {
+    next && (
+      <a class="next" href={docsHref(next.slug)} rel="next">
+        <span>Next</span>
+        <strong>{next.title}</strong>
+      </a>
+    )
+  }
+</nav>
+
+<style>
+  .pn {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    margin-top: var(--space-8);
+  }
+  .pn a {
+    display: grid;
+    gap: 2px;
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--line);
+    text-decoration: none;
+    transition: border-color 120ms;
+  }
+  .pn a:hover {
+    border-color: var(--fg);
+  }
+  .pn span {
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+  .pn strong {
+    font-weight: 600;
+    color: var(--fg);
+  }
+  .next {
+    text-align: right;
+    grid-column: 2;
+  }
+  @media (max-width: 560px) {
+    .pn {
+      grid-template-columns: 1fr;
+    }
+    .next {
+      grid-column: 1;
+    }
+  }
+</style>

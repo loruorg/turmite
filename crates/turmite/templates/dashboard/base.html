@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>{{ shell.title }} · Turmite</title>
+<link rel="icon" href="{{ shell.base }}/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="{{ shell.base }}/assets/dashboard.css">
+<script src="{{ shell.base }}/assets/dashboard.js" defer></script>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <a class="brand" href="{{ shell.base }}/dashboard">
+      {% include "logo.svg" %}
+      <span>turmite</span>
+    </a>
+    {% if !shell.projects.is_empty() %}
+    <details class="switcher">
+      <summary>
+        <span class="switcher-label">Project</span>
+        <span class="switcher-name">{% if shell.project_name.is_empty() %}Choose a project{% else %}{{ shell.project_name }}{% endif %}</span>
+      </summary>
+      <div class="switcher-menu">
+        {% for (id, name) in shell.projects %}
+        <a href="{{ shell.base }}/dashboard/p/{{ id }}"{% if shell.project_id == Some(**id) %} aria-current="page"{% endif %}>{{ name }}</a>
+        {% endfor %}
+        {% if shell.is_admin %}<a class="switcher-new" href="{{ shell.base }}/dashboard/projects/new">New project</a>{% endif %}
+      </div>
+    </details>
+    {% endif %}
+    <nav class="nav" aria-label="Project">
+      {% for item in shell.nav %}
+      <a href="{{ item.href }}"{% if item.key == shell.active %} aria-current="page"{% endif %}>{{ item.label }}</a>
+      {% endfor %}
+    </nav>
+    {% if !shell.admin_nav.is_empty() %}
+    <nav class="nav nav-admin" aria-label="Server">
+      <p class="nav-heading">Server</p>
+      {% for item in shell.admin_nav %}
+      <a href="{{ item.href }}"{% if item.key == shell.active %} aria-current="page"{% endif %}>{{ item.label }}</a>
+      {% endfor %}
+    </nav>
+    {% endif %}
+    <div class="side-foot">
+      <a class="who" href="{{ shell.base }}/dashboard/account"{% if shell.active == "account" %} aria-current="page"{% endif %}>
+        <span class="avatar" aria-hidden="true">{{ shell.initial }}</span>
+        <span class="who-text"><span class="who-mail">{{ shell.email }}</span><span class="who-role">{{ shell.role_label }}</span></span>
+      </a>
+      <form method="post" action="{{ shell.base }}/dashboard/logout"><button class="link" type="submit">Sign out</button></form>
+    </div>
+  </aside>
+  <main class="main">
+    {% if shell.demo %}<div class="banner banner-demo">Demo mode. Chains are simulated and no real funds move.</div>{% endif %}
+    {% for b in shell.updates %}<div class="banner{% if b.bad %} banner-bad{% endif %}"{% if b.bad %} role="alert"{% endif %}><span>{{ b.text }}</span> <a href="{{ shell.base }}{{ b.href }}">{{ b.link }}</a>{% if b.dismiss %}<form class="inline" method="post" action="{{ shell.base }}/dashboard/admin/updates/dismiss"><button class="link" type="submit">Dismiss</button></form>{% endif %}</div>{% endfor %}
+    {% for n in shell.notices %}<div class="banner"><span>{{ n }}</span> <a href="{{ shell.base }}/dashboard/account">Account</a></div>{% endfor %}
+    {% if let Some(f) = shell.flash %}<div class="toast toast-{{ f.kind }}" role="status">{{ f.text }}</div>{% endif %}
+    <div class="content">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+</body>
+</html>

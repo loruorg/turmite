@@ -1,0 +1,56 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head"><div><h1>Address book</h1><p>API payouts can only go to these addresses. Payouts made in the dashboard can go anywhere.</p></div></header>
+{% include "dashboard/payout_tabs.html" %}
+
+<section class="card">
+  {% if entries.is_empty() %}
+  <div class="empty"><h3>No addresses</h3><p>Add the addresses your API payouts may go to.</p></div>
+  {% else %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Label</th><th>Network</th><th>Address</th><th>Memo</th><th>Added</th>{% if can_edit %}<th></th>{% endif %}</tr></thead>
+    <tbody>
+    {% for e in entries %}
+      <tr>
+        <td>{{ e.label }}</td>
+        <td>{{ e.network }}</td>
+        <td class="mono truncate" title="{{ e.address }}">{{ e.address }}</td>
+        <td class="mono">{{ e.memo }}</td>
+        <td class="dim">{{ e.added }}</td>
+        {% if can_edit %}<td class="num">
+          <form class="row" style="justify-content:flex-end;flex-wrap:nowrap" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/payouts/address-book/{{ e.id }}/delete" data-confirm="Remove this address? API payouts to it stop working.">
+            <input class="mono" style="width:110px;height:30px" name="totp" inputmode="numeric" autocomplete="one-time-code" placeholder="2FA code" aria-label="Two-factor code">
+            <button class="btn btn-sm btn-ghost" type="submit">Remove</button>
+          </form>
+        </td>{% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% endif %}
+</section>
+
+{% if can_edit %}
+<section class="card">
+  <div class="card-head"><div><h2>Add an address</h2><p>An EVM address in mixed case must have a valid checksum.</p></div></div>
+  {% if networks.is_empty() %}
+  <div class="card-pad dim">No payout network is enabled.</div>
+  {% else %}
+  <form class="card-pad form" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/payouts/address-book">
+    <div class="row">
+      <div class="field"><label for="lb">Label</label><input id="lb" name="label" maxlength="80" required placeholder="Supplier wallet"></div>
+      <div class="field"><label for="nw">Network</label>
+        <select id="nw" name="network" required>{% for (id, name) in networks %}<option value="{{ id }}">{{ name }}</option>{% endfor %}</select>
+      </div>
+    </div>
+    <div class="field"><label for="ad">Address</label><input id="ad" class="mono" name="address" required spellcheck="false" autocomplete="off"></div>
+    <div class="field"><label for="mm">Memo</label><input id="mm" class="mono" name="extra_id" maxlength="120"><span class="hint">Only when the recipient asks for one.</span></div>
+    <div class="row">
+      <div class="field" style="max-width:180px"><label for="tc">Two-factor code</label><input id="tc" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+      <button class="btn" type="submit">Add address</button>
+    </div>
+  </form>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

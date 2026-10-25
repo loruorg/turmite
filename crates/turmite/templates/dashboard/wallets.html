@@ -1,0 +1,149 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head"><div><h1>Wallets</h1><p>Where each network's payments go. A coin is offered at checkout only when its network has a wallet here and a connected node.</p></div></header>
+
+<div class="grid">
+{% if let Some(evm) = evm %}
+<section class="card wallet">
+  <div class="card-head">
+    <div>
+      <h2>EVM networks</h2>
+      <p>Each payment gets a deposit contract that can only send to this cold wallet. The hot wallet only pays gas: it cannot send the funds anywhere else.</p>
+    </div>
+    <div class="actions">{% if !evm.factory.is_empty() && !evm.has_hot %}<span class="badge badge-plain" title="Assign an EVM hot wallet to sweep deposits">No hot wallet</span>{% endif %}</div>
+  </div>
+  {% if can_edit %}
+  <form class="card-pad row" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/wallets/evm">
+    <div class="field" style="flex:3"><label for="evm-cold">Cold wallet address</label><input id="evm-cold" class="mono" name="address" value="{{ evm.cold }}" required spellcheck="false" autocomplete="off"><span class="hint">One address for Ethereum, Base, Polygon and BNB Smart Chain. Use a wallet that you control on every one of them.</span></div>
+    <div class="field" style="max-width:150px"><label for="evm-totp">Two-factor code</label><input id="evm-totp" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+    <button class="btn" type="submit">Save</button>
+  </form>
+  {% else %}
+  <div class="card-pad"><span class="mono">{% if evm.cold.is_empty() %}Not set{% else %}{{ evm.cold }}{% endif %}</span></div>
+  {% endif %}
+  {% if !evm.factory.is_empty() %}
+  <dl class="kv evm-kv"><dt>Factory</dt><dd class="mono">{{ evm.factory }}</dd></dl>
+  <div class="table-wrap"><table><thead><tr><th>Network</th><th>Node</th><th>Factory</th><th></th></tr></thead><tbody>
+  {% for n in evm.networks %}
+    <tr{% if !n.enabled %} class="wallet-off"{% endif %}>
+      <td>{{ n.name }} <span class="dim small">{{ n.assets }}</span></td>
+      <td>{% if n.connected %}<span class="badge badge-ok">Connected</span>{% else %}<span class="badge badge-plain" title="Add a node under Networks">No node</span>{% endif %}</td>
+      <td>{% if n.deployed == "yes" %}<span class="badge badge-ok">Deployed</span>{% else if n.deploying %}<span class="badge badge-live">Deploying</span>{% else if n.deployed == "no" %}<span class="badge">Not deployed</span>{% else %}<span class="dim">Unknown</span>{% endif %}</td>
+      <td class="num"><div class="actions evm-actions">
+        {% if can_edit && n.deployed == "no" && !n.deploying %}
+        <form class="row" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/wallets/evm/{{ n.network_id }}/deploy">
+          <input class="mono input-sm" name="totp" inputmode="numeric" autocomplete="one-time-code" placeholder="2FA code" aria-label="Two-factor code">
+          <button class="btn btn-sm btn-2" type="submit">Deploy now</button>
+        </form>
+        {% endif %}
+        {% if can_edit && n.configured %}
+        <form method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/wallets/{{ n.network_id }}/toggle">
+          <input type="hidden" name="enabled" value="{% if n.enabled %}0{% else %}1{% endif %}">
+          <button class="link" type="submit">{% if n.enabled %}Stop taking payments on {{ n.name }}{% else %}Take payments on {{ n.name }} again{% endif %}</button>
+        </form>
+        {% endif %}
+      </div></td>
+    </tr>
+  {% endfor %}
+  </tbody></table></div>
+  <details class="card-pad evm-raw">
+    <summary>Deploy the factory from your own wallet</summary>
+    <p class="hint">Send this transaction with no value on each network that shows "Not deployed". Anyone can send it; the result is always the same factory.</p>
+    <dl class="kv"><dt>To</dt><dd class="mono">{{ evm.deploy_to }}</dd><dt>Data</dt><dd><textarea class="mono" readonly rows="4" aria-label="Transaction data">{{ evm.deploy_data }}</textarea></dd></dl>
+  </details>
+  {% if !evm.recent.is_empty() %}
+  <div class="table-wrap"><table><thead><tr><th>Network</th><th>Transaction</th><th>Status</th><th class="num">Fee</th><th class="num">Sent</th></tr></thead><tbody>
+  {% for t in evm.recent %}
+    <tr>
+      <td>{{ t.network }}</td>
+      <td><span class="small">{{ t.kind }}</span>{% if !t.txid.is_empty() %} {% if t.href.is_empty() %}<span class="mono small dim truncate">{{ t.txid }}</span>{% else %}<a class="mono small truncate" href="{{ t.href }}" rel="noreferrer noopener" target="_blank">{{ t.txid }}</a>{% endif %}{% endif %}</td>
+      <td>{% if t.status == "confirmed" %}<span class="badge badge-ok">Confirmed</span>{% else if t.status == "failed" %}<span class="badge badge-bad">Failed</span>{% else if t.status == "queued" %}<span class="badge">Queued</span>{% else %}<span class="badge badge-live">Sent</span>{% endif %}</td>
+      <td class="num mono small">{{ t.fee }}</td>
+      <td class="num dim small">{{ t.when }}</td>
+    </tr>
+  {% endfor %}
+  </tbody></table></div>
+  {% endif %}
+  {% endif %}
+</section>
+{% endif %}
+{% for w in lines %}
+<section class="card wallet{% if !w.enabled %} wallet-off{% endif %}" id="w{{ w.network_id }}">
+  <div class="card-head">
+    <div>
+      <h2>{{ w.name }} <span class="dim small">{{ w.assets }}</span></h2>
+      <p>{{ w.custody }}</p>
+    </div>
+    <div class="actions">
+      {% if !w.connected %}<span class="badge badge-plain" title="Add a node under Networks">No node</span>{% endif %}
+      {% if w.configured %}
+        {% if w.enabled %}<span class="badge badge-ok">On</span>{% else %}<span class="badge">Off</span>{% endif %}
+      {% endif %}
+    </div>
+  </div>
+  {% if w.family == "bitcoin" %}
+    {% if can_edit %}
+  <form class="card-pad" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/wallets/{{ w.network_id }}/bitcoin">
+    <div class="row">
+      <div class="field" style="flex:3"><label for="x{{ w.network_id }}">Account key</label><input id="x{{ w.network_id }}" class="mono" name="xpub" value="{{ w.xpub }}" required spellcheck="false" autocomplete="off" placeholder="{% if shell.testnet %}tpub or vpub{% else %}xpub or zpub{% endif %}"></div>
+      <div class="field" style="max-width:150px"><label for="t{{ w.network_id }}">Two-factor code</label><input id="t{{ w.network_id }}" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+      <button class="btn" type="submit">Save</button>
+    </div>
+    <p class="hint" style="margin-top:8px">The extended public key of a native SegWit (BIP84) account. Never enter a private key. Use a wallet only for this shop and set its gap limit above the number of open payments.</p>
+  </form>
+    {% else %}
+  <div class="card-pad"><span class="mono">{% if w.xpub.is_empty() %}Not set{% else %}{{ w.xpub_short }}{% endif %}</span></div>
+    {% endif %}
+    {% if !w.check_addresses.is_empty() %}
+  <div class="card-pad" style="padding-top:0">
+    <p class="hint">Your wallet must show these first receive addresses. If it does not, do not take payments with this key.</p>
+  </div>
+  <dl class="kv">
+    {% for a in w.check_addresses %}<dt>Address {{ loop.index0 }}</dt><dd class="mono">{{ a }}</dd>{% endfor %}
+  </dl>
+    {% endif %}
+  {% else if w.family == "monero" %}
+    {% if can_edit %}
+  <form class="card-pad" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/wallets/{{ w.network_id }}/monero">
+    <div class="row">
+      <div class="field" style="flex:3"><label for="a{{ w.network_id }}">Primary address</label><input id="a{{ w.network_id }}" class="mono" name="address" value="{{ w.address }}" required spellcheck="false" autocomplete="off"></div>
+      <div class="field" style="flex:2"><label for="v{{ w.network_id }}">Private view key</label><input id="v{{ w.network_id }}" class="mono" name="view_key" type="password" required spellcheck="false" autocomplete="off"{% if w.has_view_key %} placeholder="Saved. Enter it again to save."{% endif %}></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div class="field" style="max-width:180px"><label for="h{{ w.network_id }}">Restore height</label><input id="h{{ w.network_id }}" class="mono" name="restore_height" inputmode="numeric" value="{{ w.restore_height }}" placeholder="Current block"></div>
+      <div class="field" style="max-width:150px"><label for="t{{ w.network_id }}">Two-factor code</label><input id="t{{ w.network_id }}" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+      <button class="btn" type="submit">Save</button>
+    </div>
+    <p class="hint" style="margin-top:8px">The view key lets the server see incoming payments. It cannot spend. It is stored encrypted and never shown again. Leave the restore height empty to start at the current block: payments go to new subaddresses, so older blocks are not needed.</p>
+  </form>
+    {% else %}
+  <div class="card-pad"><span class="mono">{% if w.address.is_empty() %}Not set{% else %}{{ w.address }}{% endif %}</span></div>
+    {% endif %}
+    {% if w.has_view_key %}
+  <dl class="kv">
+    <dt>View key</dt><dd>Saved</dd>
+    <dt>Restore height</dt><dd class="mono">{{ w.restore_height }}</dd>
+  </dl>
+    {% endif %}
+  {% else %}
+    {% if can_edit %}
+  <form class="card-pad row" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/wallets/{{ w.network_id }}">
+    <div class="field" style="flex:3"><label for="a{{ w.network_id }}">{% if w.family == "evm" %}Cold wallet address{% else %}Address{% endif %}</label><input id="a{{ w.network_id }}" class="mono" name="address" value="{{ w.address }}" required spellcheck="false" autocomplete="off"></div>
+    {% if w.family == "ton" %}<div class="field"><label for="m{{ w.network_id }}">Memo</label><input id="m{{ w.network_id }}" class="mono" name="extra_id" value="{{ w.extra }}"></div>{% endif %}
+    <div class="field" style="max-width:150px"><label for="t{{ w.network_id }}">Two-factor code</label><input id="t{{ w.network_id }}" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+    <button class="btn" type="submit">Save</button>
+  </form>
+    {% else %}
+  <div class="card-pad"><span class="mono">{% if w.address.is_empty() %}Not set{% else %}{{ w.address }}{% endif %}</span></div>
+    {% endif %}
+  {% endif %}
+  {% if can_edit && w.configured %}
+  <form class="card-pad toggle-row" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/wallets/{{ w.network_id }}/toggle">
+    <input type="hidden" name="enabled" value="{% if w.enabled %}0{% else %}1{% endif %}">
+    <button class="link" type="submit">{% if w.enabled %}Stop taking payments on {{ w.name }}{% else %}Take payments on {{ w.name }} again{% endif %}</button>
+  </form>
+  {% endif %}
+</section>
+{% endfor %}
+</div>
+{% endblock %}

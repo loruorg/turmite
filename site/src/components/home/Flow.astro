@@ -1,0 +1,324 @@
+---
+const steps = [
+  { t: 'Checkout', d: 'Your shop creates a payment through the API. The customer opens the checkout page.' },
+  { t: 'Deposit address', d: 'Each payment gets its own address. The checkout shows the amount and a QR code.' },
+  { t: 'Confirmations', d: 'The worker watches the chain on your own nodes and counts confirmations.' },
+  { t: 'Webhook', d: 'Your shop gets a signed webhook for each status. Ship when the status is finished.' },
+  { t: 'Cold wallet', d: 'A later sweep moves the funds to your cold wallet. On Bitcoin and Monero they arrive there directly.' },
+];
+// One log line per step, for the illustration.
+const log = [
+  { time: '12:00:01', ev: 'POST /v1/payment', st: '201 Created', note: 'payment_id 5524759814' },
+  { time: '12:00:03', ev: 'GET /pay/k3J9Qm7d', st: 'waiting', note: '25.00 USDC on Base' },
+  { time: '12:01:12', ev: 'deposit 0x7f3a...c21e', st: 'confirmed', note: '10/10 confirmations' },
+  { time: '12:01:13', ev: 'POST shop.example.com/turmite/ipn', st: '200 OK', note: 'payment.finished' },
+  { time: '18:00:00', ev: 'batch sweep to cold wallet', st: 'swept', note: 'factory flush' },
+]
+---
+
+<section class="flow" aria-labelledby="flow-title">
+  <div class="flow-track">
+    <div class="flow-stage wrap">
+      <header class="sec-head">
+        <span class="sec-num">01 How a payment works</span>
+        <h2 id="flow-title">From checkout to cold wallet.</h2>
+      </header>
+      <ol class="flow-steps">
+        <li class="rail" aria-hidden="true"><span class="rail-fill"></span><span class="token"></span></li>
+        {
+          steps.map((s, i) => (
+            <li class="step" style={`--i:${i}`}>
+              <span class="node" aria-hidden="true" />
+              <span class="idx">{String(i + 1).padStart(2, '0')}</span>
+              <h3>{s.t}</h3>
+              <p>{s.d}</p>
+            </li>
+          ))
+        }
+      </ol>
+      <div class="log" aria-hidden="true">
+        {
+          log.map((l, i) => (
+            <div class="log-line" style={`--i:${i}`}>
+              <span class="t">{l.time}</span>
+              <span class="ev">{l.ev}</span>
+              <span class="st">{l.st}</span>
+              <span class="note">{l.note}</span>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .flow {
+    border-top: 1px solid var(--line);
+  }
+  .flow-stage {
+    padding-block: var(--space-10);
+  }
+  .flow-steps {
+    --node: 18px;
+    --gap: var(--space-5);
+    position: relative;
+    list-style: none;
+    margin: var(--space-8) 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--gap);
+  }
+  .rail {
+    position: absolute;
+    left: calc(var(--node) / 2);
+    right: calc(20% - var(--gap) * 0.8 - var(--node) / 2);
+    top: calc(var(--node) / 2);
+    height: 1px;
+    background: var(--line-strong);
+  }
+  .rail-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--fg);
+    transform-origin: left;
+  }
+  .token {
+    display: none;
+  }
+  .node {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: var(--node);
+    height: var(--node);
+    background: var(--fg);
+    border: 1px solid var(--fg);
+    box-shadow: 0 0 0 6px var(--bg);
+  }
+  .idx {
+    display: block;
+    margin-top: var(--space-6);
+    font: 500 0.75rem var(--mono);
+    color: var(--muted);
+  }
+  .step h3 {
+    margin-top: var(--space-2);
+    font-size: 1.1875rem;
+    letter-spacing: -0.02em;
+  }
+  .step p {
+    margin-top: var(--space-2);
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: var(--muted);
+    max-width: 30ch;
+  }
+  .log {
+    margin-top: var(--space-8);
+    border-top: 1px solid var(--fg);
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+  }
+  .log-line {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 2.4fr) minmax(0, 1.2fr) minmax(0, 1.4fr);
+    gap: var(--space-4);
+    padding: 11px 0;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  .log-line > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .t,
+  .note {
+    color: var(--muted);
+  }
+  .ev {
+    color: var(--fg);
+  }
+  .st {
+    color: var(--fg);
+    font-weight: 600;
+  }
+
+  @media (max-width: 900px) {
+    .flow-steps {
+      grid-template-columns: minmax(0, 1fr);
+      --gap: var(--space-6);
+      padding-left: calc(var(--node) + var(--space-5));
+    }
+    .rail {
+      display: none;
+    }
+    .step {
+      position: relative;
+    }
+    .step .node {
+      position: absolute;
+      top: 2px;
+      left: calc(-1 * (var(--node) + var(--space-5)));
+    }
+    .step:not(:last-child)::before,
+    .step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: calc(-1 * (var(--node) + var(--space-5)) + var(--node) / 2);
+      top: calc(2px + var(--node) / 2);
+      width: 1px;
+      height: calc(100% + var(--gap));
+      background: var(--line-strong);
+    }
+    .step:not(:last-child)::after {
+      background: var(--fg);
+      transform-origin: top;
+    }
+    .idx {
+      margin-top: 0;
+    }
+    .log {
+      display: none;
+    }
+  }
+
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      /* Wide screens: the section pins, a cell travels along the rail and turns each node black. */
+      @media (min-width: 901px) and (min-height: 700px) {
+        .flow-track {
+          height: 240vh;
+          view-timeline: --flow block;
+        }
+        .flow-stage {
+          position: sticky;
+          top: var(--header-h);
+          min-height: calc(100svh - var(--header-h));
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding-block: var(--space-7);
+        }
+        .rail-fill {
+          animation: fill-x linear both;
+        }
+        .flow-steps .rail-fill {
+          animation-timeline: --flow;
+          animation-range: contain 6% contain 86%;
+        }
+        .token {
+          display: block;
+          position: absolute;
+          z-index: 2;
+          top: 0;
+          left: 0;
+          width: var(--node);
+          height: var(--node);
+          translate: -50% -50%;
+          background: var(--bg);
+          border: 2px solid var(--fg);
+          animation: move-x linear both;
+        }
+        .flow-steps .token {
+          animation-timeline: --flow;
+          animation-range: contain 6% contain 86%;
+        }
+        .node {
+          animation: node-on linear both;
+        }
+        .flow-steps .node {
+          animation-timeline: --flow;
+          animation-range: contain calc(4% + var(--i) * 20%) contain calc(8% + var(--i) * 20%);
+        }
+        .step h3,
+        .step p,
+        .idx,
+        .log-line {
+          animation: text-on linear both;
+        }
+        .flow-steps .step h3,
+        .flow-steps .step p,
+        .flow-steps .idx,
+        .log .log-line {
+          animation-timeline: --flow;
+          animation-range: contain calc(2% + var(--i) * 20%) contain calc(8% + var(--i) * 20%);
+        }
+      }
+      /* Narrow screens: each step lights up as it reaches the middle of the screen. */
+      @media (max-width: 900px) {
+        .node {
+          animation: node-on linear both;
+        }
+        .flow-steps .node {
+          animation-timeline: view();
+          animation-range: entry 70% cover 45%;
+        }
+        .step h3,
+        .step p,
+        .idx {
+          animation: text-on linear both;
+        }
+        .flow-steps .step h3,
+        .flow-steps .step p,
+        .flow-steps .idx {
+          animation-timeline: view();
+          animation-range: entry 60% cover 45%;
+        }
+        .step:not(:last-child)::after {
+          animation: fill-y linear both;
+        }
+        .flow-steps .step:not(:last-child)::after {
+          animation-timeline: view();
+          animation-range: cover 45% exit 40%;
+        }
+      }
+    }
+  }
+  @keyframes fill-x {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+  @keyframes fill-y {
+    from {
+      transform: scaleY(0);
+    }
+    to {
+      transform: scaleY(1);
+    }
+  }
+  @keyframes move-x {
+    from {
+      left: 0%;
+      background: var(--bg);
+    }
+    96% {
+      background: var(--bg);
+    }
+    to {
+      left: 100%;
+      background: var(--fg);
+    }
+  }
+  @keyframes node-on {
+    from {
+      background: var(--bg);
+    }
+    to {
+      background: var(--fg);
+    }
+  }
+  @keyframes text-on {
+    from {
+      opacity: 0.25;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+</style>

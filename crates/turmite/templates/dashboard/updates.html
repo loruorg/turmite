@@ -1,0 +1,44 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head"><div><h1>Updates</h1><p>Once a day the worker reads the latest release and the security advisories of Turmite on GitHub. The request sends the version in its User-Agent and nothing else.</p></div>
+  <div class="actions"><form method="post" action="{{ shell.base }}/dashboard/admin/updates/check"><button class="btn btn-2" type="submit">Check now</button></form></div>
+</header>
+{% if affected %}<p class="alert" role="alert" style="margin-bottom:16px">A security advisory affects this version. Upgrade now.</p>{% endif %}
+<div class="grid grid-2">
+<section class="card">
+  <div class="card-head"><div><h2>Version</h2></div>{% if newer %}<div class="actions"><span class="badge badge-live">New release</span></div>{% endif %}</div>
+  <dl class="kv">
+    <dt>This server</dt><dd class="mono">{{ version }}{% if dev %} <span class="dim">(development build)</span>{% endif %}</dd>
+    <dt>Latest release</dt><dd>{% if latest.is_empty() %}<span class="dim">Unknown</span>{% else %}<a class="mono" href="{{ latest_url }}" rel="noopener noreferrer">{{ latest }}</a>{% if !latest_date.is_empty() %} <span class="dim">{{ latest_date }}</span>{% endif %}{% endif %}</dd>
+    <dt>Last check</dt><dd>{% if checked.is_empty() %}<span class="dim">Never</span>{% else %}{{ checked }}{% endif %}{% if !error.is_empty() %}<br><span class="dim small">The last check failed: {{ error }}</span>{% endif %}</dd>
+    <dt>Release notes</dt><dd><a href="{{ releases }}" rel="noopener noreferrer">{{ releases }}</a></dd>
+  </dl>
+</section>
+<section class="card">
+  <div class="card-head"><div><h2>Upgrade</h2><p>Run this on the server. It backs up the database to backups/, pulls the new image and restarts the stack.</p></div></div>
+  <div class="card-pad">
+    <div class="secret"><code>{{ command }}</code><button class="btn btn-sm btn-2 copy" type="button" data-copy="{{ command }}" hidden>Copy</button></div>
+  </div>
+  <form class="card-pad row" method="post" action="{{ shell.base }}/dashboard/admin/updates/settings" style="border-top:1px solid var(--line)">
+    <label class="check" style="align-self:center"><input type="checkbox" name="enabled" value="1"{% if enabled %} checked{% endif %}> Check for updates every day</label>
+    <div class="field" style="max-width:130px"><label for="ut">Two-factor code</label><input id="ut" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"><span class="hint">Needed to turn checks off.</span></div>
+    <button class="btn btn-2" type="submit">Save</button>
+  </form>
+</section>
+</div>
+<section class="card" style="margin-top:16px">
+  <div class="card-head"><div><h2>Security advisories</h2><p>Published advisories for the Turmite server. Development builds get none.</p></div></div>
+  {% if advisories.is_empty() %}
+  <div class="empty"><h3>No advisories</h3><p>{% if checked.is_empty() %}No check has run yet.{% else %}GitHub lists no published advisory for Turmite.{% endif %}</p></div>
+  {% else %}
+  <div class="table-wrap"><table><thead><tr><th>Advisory</th><th>Severity</th><th>Affected</th><th>Fixed in</th><th>This server</th></tr></thead><tbody>
+  {% for a in advisories %}
+    <tr><td><a class="mono" href="{{ a.url }}" rel="noopener noreferrer">{{ a.id }}</a><br><span class="small">{{ a.summary }}</span>{% if !a.published.is_empty() %} <span class="dim small">{{ a.published }}</span>{% endif %}</td>
+    <td>{% if a.severity == "critical" || a.severity == "high" %}<span class="badge badge-bad">{{ a.severity }}</span>{% else %}<span class="badge">{{ a.severity }}</span>{% endif %}</td>
+    <td class="mono small">{{ a.ranges }}</td><td class="mono small">{{ a.patched }}</td>
+    <td>{% if a.affects %}<span class="badge badge-bad">Affected</span>{% else %}<span class="badge badge-ok">Not affected</span>{% endif %}</td></tr>
+  {% endfor %}
+  </tbody></table></div>
+  {% endif %}
+</section>
+{% endblock %}

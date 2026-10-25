@@ -1,0 +1,53 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head"><div><h1>Webhooks</h1><p>Turmite posts an event to each endpoint when a payment or payout changes. A payment's own <code>ipn_callback_url</code> gets its events too.</p></div></header>
+
+{% if !new_secret.is_empty() %}
+<section class="card card-pad">
+  <h2>Signing secret</h2>
+  <p class="dim" style="margin:6px 0 12px">Copy it now. It is shown only once. Verify <code>x-turmite-signature</code> with it.</p>
+  <div class="secret"><code>{{ new_secret }}</code><button class="btn btn-sm btn-2 copy" type="button" data-copy="{{ new_secret }}" hidden>Copy</button></div>
+</section>
+{% endif %}
+
+<section class="card">
+  <div class="card-head"><div><h2>Endpoints</h2><p>Signatures: <code>x-turmite-signature</code> (v1, with a timestamp) and <code>{{ signature_header }}</code> (HMAC-SHA512).</p></div></div>
+  {% if endpoints.is_empty() %}
+  <div class="empty"><h3>No endpoints</h3><p>Add the URL on your server that should receive events.</p></div>
+  {% else %}
+  <div class="table-wrap"><table><thead><tr><th>URL</th><th>Added</th><th></th></tr></thead><tbody>
+  {% for e in endpoints %}
+    <tr><td class="mono truncate">{{ e.url }}</td><td class="dim">{{ e.created }}</td>
+    <td class="num">{% if can_edit %}<span class="actions" style="justify-content:flex-end">
+      <form class="inline" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/webhooks/{{ e.id }}/test"><button class="btn btn-sm btn-2" type="submit">Send test</button></form>
+      <form class="inline" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/webhooks/{{ e.id }}/delete" data-confirm="Delete this endpoint?"><button class="btn btn-sm btn-ghost" type="submit">Delete</button></form>
+    </span>{% endif %}</td></tr>
+  {% endfor %}
+  </tbody></table></div>
+  {% endif %}
+  {% if can_edit %}
+  <form class="card-pad row" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/webhooks" style="border-top:1px solid var(--line)">
+    <div class="field" style="flex:3"><label for="u">Endpoint URL</label><input id="u" class="mono" name="url" type="url" placeholder="https://shop.example.com/turmite/webhook" required></div>
+    <button class="btn" type="submit">Add endpoint</button>
+  </form>
+  {% endif %}
+</section>
+
+<div class="section-title"><h2>Deliveries</h2><span class="small dim">Last 50</span></div>
+<section class="card">
+  {% if deliveries.is_empty() %}<div class="empty"><h3>Nothing sent yet</h3></div>{% else %}
+  <div class="table-wrap"><table><thead><tr><th>Event</th><th>Target</th><th>Status</th><th class="num">Tries</th><th>Result</th><th>Created</th><th></th></tr></thead><tbody>
+  {% for d in deliveries %}
+    <tr>
+      <td class="mono">{{ d.event }}</td>
+      <td class="truncate"><span class="dim small">{{ d.kind }}</span> <span class="mono small">{{ d.url }}</span></td>
+      <td><span class="badge {{ d.status_class }}">{{ d.status_label }}</span></td>
+      <td class="num">{{ d.attempts }}</td>
+      <td class="truncate dim small">{% if !d.code.is_empty() %}HTTP {{ d.code }}{% else %}{{ d.error }}{% endif %}</td>
+      <td class="dim">{{ d.when }}</td>
+      <td class="num">{% if can_edit && d.status != "delivering" %}<form class="inline" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/webhooks/deliveries/{{ d.id }}/retry"><button class="btn btn-sm btn-ghost" type="submit">Retry</button></form>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody></table></div>{% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,94 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import '../../styles/docs.css';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+const { post } = Astro.props;
+const { Content } = await render(post);
+const date = post.data.date;
+const fmt = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+---
+
+<Base title={post.data.title} description={post.data.description} current="blog" themed type="article">
+  <main id="main" class="post wrap">
+    <aside class="meta" data-pagefind-ignore>
+      <a class="back" href="/blog/">Blog</a>
+      <time datetime={date.toISOString().slice(0, 10)}>{fmt}</time>
+    </aside>
+    <article data-pagefind-body>
+      <header class="post-head">
+        <h1>{post.data.title}</h1>
+        <p class="lead">{post.data.description}</p>
+      </header>
+      <div class="prose"><Content /></div>
+    </article>
+  </main>
+</Base>
+
+<script>
+  import '../../scripts/docs';
+</script>
+
+<style>
+  .post {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 720px);
+    gap: var(--space-6);
+    padding-block: var(--space-9) var(--space-10);
+  }
+  .meta {
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+    padding-top: 14px;
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+  .back {
+    color: var(--fg);
+    text-decoration: none;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .back::before {
+    content: '< ';
+  }
+  .back:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .post-head {
+    padding-bottom: var(--space-6);
+    margin-bottom: var(--space-7);
+    border-bottom: 1px solid var(--line);
+  }
+  .post-head h1 {
+    font-size: var(--step-5);
+    letter-spacing: -0.05em;
+    line-height: 0.98;
+  }
+  .post-head .lead {
+    margin-top: var(--space-5);
+    font-size: 1.1875rem;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+  @media (max-width: 860px) {
+    .post {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-5);
+      padding-top: var(--space-7);
+    }
+    .meta {
+      grid-auto-flow: column;
+      justify-content: space-between;
+      padding-top: 0;
+    }
+  }
+</style>

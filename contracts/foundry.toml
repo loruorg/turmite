@@ -1,0 +1,39 @@
+[profile.default]
+src = "src"
+test = "test"
+out = "out"
+libs = ["lib"]
+remappings = ["forge-std/=lib/forge-std/src/"]
+solc_version = "0.8.38"
+# Cancun is the newest EVM version that Ethereum, Base, Polygon PoS and BNB Smart Chain all run, testnets included.
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 1000000
+# No metadata hash: a comment change must not change the bytecode, the factory address or the deposit addresses.
+bytecode_hash = "none"
+no_match_path = "test/fork/*"
+
+[profile.default.fuzz]
+runs = 2000
+
+[profile.default.invariant]
+runs = 256
+depth = 100
+fail_on_revert = true
+
+[profile.fork]
+match_path = "test/fork/*"
+no_match_path = "test/unit/*"
+
+[rpc_endpoints]
+ethereum = "https://ethereum-rpc.publicnode.com"
+base = "https://base-rpc.publicnode.com"
+polygon = "https://polygon-bor-rpc.publicnode.com"
+bsc = "https://bsc-rpc.publicnode.com"
+
+[lint]
+# The public getters keep the names of the ABI.
+exclude_lints = ["screaming-snake-case-immutable"]
+
+[fmt]
+line_length = 120

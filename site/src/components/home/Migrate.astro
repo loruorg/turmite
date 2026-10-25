@@ -1,0 +1,129 @@
+---
+import Icon from '../Icon.astro';
+
+const lines = [
+  { k: 'c', t: '# .env of your shop' },
+  { k: 'd', t: 'PAYMENTS_API_URL=https://api.hosted-gateway.example' },
+  { k: 'a', t: 'PAYMENTS_API_URL=https://pay.example.com' },
+  { k: 'd', t: 'PAYMENTS_API_KEY=7KX2Q9P-MW1N4RT-H8ZD3VC-B6YF0JS' },
+  { k: 'a', t: 'PAYMENTS_API_KEY=tm_3f9a1c27e8b04d5a9c6e1f2b7d8a0c34' },
+  { k: 'd', t: 'PAYMENTS_IPN_SECRET=old-ipn-secret' },
+  { k: 'a', t: 'PAYMENTS_IPN_SECRET=new-ipn-secret' },
+];
+---
+
+<section class="section" aria-labelledby="migrate-title">
+  <div class="wrap split rev">
+    <div class="panel diff" role="img" aria-label="A diff of a shop configuration. Only the API URL, the API key and the IPN secret change.">
+      <div class="panel-bar">
+        <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="grow">migrate.diff</span>
+        <span>3 changes</span>
+      </div>
+      <div class="lines" aria-hidden="true">{
+        lines.map((l, i) => (
+          <span class={`ln ${l.k}`} style={`--i:${i}`}>
+            <span class="sign">{l.k === 'd' ? '-' : l.k === 'a' ? '+' : ' '}</span>
+            <span class="txt">{l.t}</span>
+          </span>
+        ))
+      }</div>
+    </div>
+    <div>
+      <header class="sec-head">
+        <span class="sec-num">04 Migrate</span>
+        <h2 id="migrate-title">Point your shop at your own server.</h2>
+        <p>
+          Turmite keeps the paths, fields, statuses and IPN signature of the common hosted-gateway API. Change the base
+          URL, the API key and the IPN secret. The rest of your code stays the same.
+        </p>
+      </header>
+      <ul class="ticks">
+        <li>Same endpoints under <code>/v1/</code>, same payment object.</li>
+        <li>IPN signed with HMAC-SHA512 over the key-sorted JSON body.</li>
+        <li>Set the signature header name to the one your code reads.</li>
+      </ul>
+      <p class="more-row"><a class="more" href="/docs/migrate/">Migration checklist <Icon name="arrow" /></a></p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .more-row {
+    margin-top: var(--space-6);
+  }
+  .diff .lines {
+    margin: 0;
+    padding: 16px 0;
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    line-height: 1.9;
+    overflow-x: auto;
+  }
+  .ln {
+    display: flex;
+    gap: 14px;
+    padding: 0 20px;
+    white-space: pre;
+  }
+  .sign {
+    width: 1ch;
+    flex: none;
+    color: var(--muted);
+  }
+  .c .txt {
+    color: var(--faint);
+    font-style: italic;
+  }
+  .d {
+    color: var(--muted);
+  }
+  .d .txt {
+    text-decoration: line-through;
+    text-decoration-color: var(--faint);
+  }
+  .a {
+    background: var(--surface-2);
+    color: var(--fg);
+    font-weight: 600;
+  }
+  .a .sign {
+    color: var(--fg);
+  }
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .d .txt {
+        animation: strike linear both;
+      }
+      .lines .d .txt {
+        animation-timeline: view();
+        animation-range: entry calc(30% + var(--i) * 6%) cover calc(30% + var(--i) * 4%);
+      }
+      .a {
+        animation: type-in linear both;
+      }
+      .lines .a {
+        animation-timeline: view();
+        animation-range: entry calc(40% + var(--i) * 6%) cover calc(34% + var(--i) * 4%);
+      }
+    }
+  }
+  @keyframes strike {
+    from {
+      text-decoration-color: transparent;
+      color: var(--fg);
+    }
+    to {
+      text-decoration-color: var(--faint);
+    }
+  }
+  @keyframes type-in {
+    from {
+      clip-path: inset(0 100% 0 0);
+      background: transparent;
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+</style>

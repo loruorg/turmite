@@ -1,0 +1,16 @@
+<div class="table-wrap"><table>
+  <thead><tr><th>Payment</th><th>Order</th><th class="num">Price</th><th class="num">Amount</th><th>Network</th><th>Status</th><th>Created</th></tr></thead>
+  <tbody>
+  {% for r in recent %}
+    <tr>
+      <td><a class="row-link mono" href="{{ r.href }}">{{ r.id }}</a></td>
+      <td class="truncate">{{ r.order_id }}</td>
+      <td class="num">{{ r.price }}</td>
+      <td class="num mono">{{ r.pay }}</td>
+      <td class="dim">{{ r.network }}</td>
+      <td><span class="badge {{ r.status_class }}">{{ r.status_label }}</span></td>
+      <td class="dim">{{ r.created }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>

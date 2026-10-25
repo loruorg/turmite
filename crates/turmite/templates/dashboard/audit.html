@@ -1,0 +1,21 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head"><div><h1>Audit log</h1><p>Every sensitive action on this server, newest first.</p></div></header>
+<section class="card">
+  {% if rows.is_empty() %}<div class="empty"><h3>No entries</h3></div>{% else %}
+  <div class="table-wrap"><table><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Project</th><th>Target</th><th>IP</th></tr></thead><tbody>
+  {% for r in rows %}
+    <tr>
+      <td class="dim small">{{ r.created_at.format("%Y-%m-%d %H:%M:%S") }}</td>
+      <td>{% if let Some(e) = r.user_email %}{{ e }}{% else %}<span class="dim">{{ r.actor }}</span>{% endif %}</td>
+      <td class="mono small">{{ r.action }}</td>
+      <td class="dim">{% if let Some(n) = r.project_name %}{{ n }}{% endif %}</td>
+      <td class="mono small dim">{{ r.entity }}{% if let Some(id) = r.entity_id %} {{ id }}{% endif %}</td>
+      <td class="mono small dim">{% if let Some(ip) = r.ip %}{{ ip }}{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody></table></div>
+  <div class="pager"><span>Page {{ page + 1 }}</span><span class="actions">{% if page > 0 %}<a class="btn btn-sm btn-2" href="?page={{ page - 1 }}">Newer</a>{% endif %}{% if rows.len() == 100 %}<a class="btn btn-sm btn-2" href="?page={{ page + 1 }}">Older</a>{% endif %}</span></div>
+  {% endif %}
+</section>
+{% endblock %}

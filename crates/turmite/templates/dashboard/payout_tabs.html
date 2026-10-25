@@ -1,0 +1,6 @@
+<nav class="tabs" aria-label="Payouts">
+  <a href="{{ shell.base }}/dashboard/p/{{ pid }}/payouts"{% if tab == "list" %} aria-current="page"{% endif %}>Payouts</a>
+  <a href="{{ shell.base }}/dashboard/p/{{ pid }}/payouts/new"{% if tab == "new" %} aria-current="page"{% endif %}>New payout</a>
+  <a href="{{ shell.base }}/dashboard/p/{{ pid }}/payouts/address-book"{% if tab == "book" %} aria-current="page"{% endif %}>Address book</a>
+  <a href="{{ shell.base }}/dashboard/p/{{ pid }}/payouts/limits"{% if tab == "limits" %} aria-current="page"{% endif %}>Limits</a>
+</nav>

@@ -1,0 +1,197 @@
+---
+import Icon from '../Icon.astro';
+// Examples of coins a customer can pay with through the exchange. The live list comes from Trocador.
+const coins = ['BTC', 'XMR', 'ETH', 'LTC', 'SOL', 'DOGE', 'ZEC', 'XRP', 'ADA', 'BCH', 'DOT', 'TRX', 'AVAX', 'XLM', 'TON', 'DASH', 'ATOM', 'NEAR', 'ARB', 'OP'];
+const col = (offset: number) => [...coins.slice(offset), ...coins.slice(0, offset)];
+---
+
+<section class="section" aria-labelledby="anycoin-title">
+  <div class="wrap split">
+    <div>
+      <header class="sec-head">
+        <span class="sec-num">06 Pay with any coin</span>
+        <h2 id="anycoin-title">One wallet. More than 200 coins.</h2>
+        <p>
+          Connect your own <a href="https://trocador.app">Trocador</a> API key. The customer pays in any coin that Trocador
+          lists. The exchange sends your coin to the payment's deposit address.
+        </p>
+      </header>
+      <ul class="ticks">
+        <li>Turmite credits only what arrives on chain at the deposit address.</li>
+        <li>A project with one stablecoin wallet can accept Bitcoin and Monero.</li>
+        <li>You choose the markup and the minimum KYC rating of the exchanges.</li>
+      </ul>
+      <p class="more-row"><a class="more" href="/docs/exchange/">Pay with any coin <Icon name="arrow" /></a></p>
+    </div>
+    <div class="ex-stage" aria-hidden="true">
+      <div class="cols">
+        {
+          [0, 7, 13].map((o, k) => (
+            <div class={`col col-${k}`}>
+              <ul>
+                {[...col(o), ...col(o)].map((c) => (
+                  <li>{c}</li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+      <div class="arrow">
+        <svg viewBox="0 0 120 24" preserveAspectRatio="none"><path d="M0 12h112m-8-8 8 8-8 8"></path></svg>
+        <span>Trocador</span>
+      </div>
+      <div class="dest">
+        <span class="dest-lbl">Deposit address</span>
+        <span class="dest-coin">USDT</span>
+        <span class="dest-net">on Tron</span>
+        <span class="dest-cell"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .more-row {
+    margin-top: var(--space-6);
+  }
+  .ex-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(64px, 0.5fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-4);
+    height: 440px;
+    padding: 0 var(--space-6);
+    border: 1px solid var(--fg);
+    overflow: hidden;
+  }
+  .cols {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    height: 100%;
+    min-height: 0;
+    mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent);
+  }
+  .col {
+    overflow: hidden;
+  }
+  .col ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+    animation: rise 38s linear infinite;
+  }
+  .col-1 ul {
+    animation-duration: 30s;
+  }
+  .col-2 ul {
+    animation-duration: 44s;
+  }
+  .col li {
+    display: grid;
+    place-items: center;
+    height: 40px;
+    border: 1px solid var(--line-strong);
+    font: 500 0.75rem var(--mono);
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+  .arrow {
+    display: grid;
+    gap: 6px;
+    justify-items: center;
+    font: 500 0.6875rem var(--mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .arrow svg {
+    width: 100%;
+    height: 24px;
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+    stroke-dasharray: 6 6;
+    animation: dash 1s linear infinite;
+  }
+  .dest {
+    display: grid;
+    gap: 2px;
+    padding: var(--space-5);
+    background: var(--fg);
+    color: var(--bg);
+  }
+  .dest-lbl {
+    font: 500 0.6875rem var(--mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+  .dest-coin {
+    margin-top: var(--space-4);
+    font-size: 2rem;
+    font-weight: 650;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .dest-net {
+    font-size: 0.875rem;
+    opacity: 0.7;
+  }
+  .dest-cell {
+    width: 12px;
+    height: 12px;
+    margin-top: var(--space-4);
+    background: var(--bg);
+    animation: blink 1.6s steps(1) infinite;
+  }
+  @keyframes rise {
+    to {
+      transform: translateY(-50%);
+    }
+  }
+  @keyframes dash {
+    to {
+      stroke-dashoffset: -12;
+    }
+  }
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .col ul,
+    .arrow svg,
+    .dest-cell {
+      animation: none;
+    }
+  }
+  @media (max-width: 600px) {
+    .ex-stage {
+      height: 320px;
+      padding: 0 var(--space-4);
+      grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr);
+    }
+    .cols {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .col-2 {
+      display: none;
+    }
+    .arrow span {
+      display: none;
+    }
+    .dest {
+      padding: var(--space-4);
+    }
+    .dest-coin {
+      font-size: 1.5rem;
+    }
+  }
+</style>

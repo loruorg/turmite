@@ -1,0 +1,47 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head">
+  <div><h1>Payouts</h1><p>Payouts leave from the project's hot wallets. {{ total }} in this view.{% if waiting > 0 %} {{ waiting }} wait for a person.{% endif %}</p></div>
+  {% if can_create %}<div class="actions"><a class="btn" href="{{ shell.base }}/dashboard/p/{{ pid }}/payouts/new">New payout</a></div>{% endif %}
+</header>
+{% include "dashboard/payout_tabs.html" %}
+<form class="filters" method="get" action="{{ shell.base }}/dashboard/p/{{ pid }}/payouts">
+  <select name="status" aria-label="Status">
+    <option value="">All statuses</option>
+    {% for (v, l) in statuses %}<option value="{{ v }}"{% if status == *v %} selected{% endif %}>{{ l }}</option>{% endfor %}
+  </select>
+  <select name="network" aria-label="Network">
+    <option value="">All networks</option>
+    {% for (id, name) in networks %}<option value="{{ id }}"{% if network == id.to_string() %} selected{% endif %}>{{ name }}</option>{% endfor %}
+  </select>
+  <button class="btn btn-2" type="submit">Filter</button>
+</form>
+<section class="card">
+  {% if lines.is_empty() %}
+  <div class="empty"><h3>No payouts</h3><p>Create one here, or send a batch to <code>POST /v1/payout</code>.</p></div>
+  {% else %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Payout</th><th class="num">Amount</th><th>Network</th><th>To</th><th>Status</th><th>Created</th></tr></thead>
+    <tbody>
+    {% for l in lines %}
+      <tr>
+        <td><a class="row-link mono" href="{{ l.href }}">{{ l.id }}</a></td>
+        <td class="num mono">{{ l.amount }}</td>
+        <td>{{ l.network }}</td>
+        <td class="mono truncate">{{ l.to }}</td>
+        <td><span class="badge {{ l.status_class }}" title="{{ l.status }}">{{ l.status_label }}</span></td>
+        <td class="dim">{{ l.created }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <div class="pager">
+    <span>Page {{ page + 1 }} of {{ pages }}</span>
+    <span class="actions">
+      {% if page > 0 %}<a class="btn btn-sm btn-2" href="?status={{ status }}&network={{ network }}&page={{ page - 1 }}">Previous</a>{% endif %}
+      {% if page + 1 < pages %}<a class="btn btn-sm btn-2" href="?status={{ status }}&network={{ network }}&page={{ page + 1 }}">Next</a>{% endif %}
+    </span>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head">
+  <div><h1>Payments</h1><p>{{ total }} in total.</p></div>
+  <div class="actions"><a class="btn btn-2" href="{{ shell.base }}/dashboard/p/{{ pid }}/invoices">New payment link</a></div>
+</header>
+<form class="filters" method="get" action="{{ shell.base }}/dashboard/p/{{ pid }}/payments">
+  <select name="status" aria-label="Status">
+    <option value="">All statuses</option>
+    {% for (v, l) in statuses %}<option value="{{ v }}"{% if status == *v %} selected{% endif %}>{{ l }}</option>{% endfor %}
+  </select>
+  <input type="search" name="order" value="{{ order }}" placeholder="Order ID" aria-label="Order ID">
+  <button class="btn btn-2" type="submit">Filter</button>
+</form>
+<section class="card">
+  {% if recent.is_empty() %}
+    {% include "dashboard/empty.html" %}
+  {% else %}
+    {% include "dashboard/payment_table.html" %}
+    <div class="pager">
+      <span>Page {{ page + 1 }} of {{ pages }}</span>
+      <span class="actions">
+        {% if page > 0 %}<a class="btn btn-sm btn-2" href="?status={{ status }}&order={{ order }}&page={{ page - 1 }}">Previous</a>{% endif %}
+        {% if page + 1 < pages %}<a class="btn btn-sm btn-2" href="?status={{ status }}&order={{ order }}&page={{ page + 1 }}">Next</a>{% endif %}
+      </span>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

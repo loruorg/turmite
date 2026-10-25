@@ -1,0 +1,46 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head"><div><h1>New payout</h1><p>A payout made here can go to any valid address. The project limits still apply: above them, an admin approves it with an emailed code.</p></div></header>
+{% include "dashboard/payout_tabs.html" %}
+
+<section class="card">
+  <div class="card-head"><div><h2>Hot wallets of this project</h2><p>Bitcoin and Monero have no hot wallet, so there are no payouts on them. A server admin assigns hot wallets under Server &gt; Hot wallets.</p></div></div>
+  <dl class="kv">
+    {% for (family, address) in wallets %}<dt>{{ family }}</dt><dd>{% if address.is_empty() %}<span class="dim">None</span>{% else %}<span class="mono">{{ address }}</span>{% endif %}</dd>{% endfor %}
+  </dl>
+</section>
+
+{% if !can_create %}
+<section class="card card-pad"><p class="dim">Only a project admin can create payouts.</p></section>
+{% else if currencies.is_empty() %}
+<section class="card card-pad"><p>This project has no hot wallet yet, so it cannot send payouts.</p></section>
+{% else %}
+<section class="card">
+  <form class="card-pad form" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/payouts">
+    <div class="field"><label for="cur">Currency</label>
+      <select id="cur" name="currency" required>
+        {% for c in currencies %}<option value="{{ c.ticker }}">{{ c.label }}</option>{% endfor %}
+      </select>
+    </div>
+    {% if !book.is_empty() %}
+    <div class="field"><label for="bk">From the address book</label>
+      <select id="bk" name="book">
+        <option value="">No, use the address below</option>
+        {% for b in book %}<option value="{{ b.id }}">{{ b.label }}</option>{% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    <div class="field"><label for="ad">Address</label><input id="ad" class="mono" name="address" spellcheck="false" autocomplete="off"><span class="hint">Leave empty when you chose an address-book entry.</span></div>
+    <div class="row">
+      <div class="field"><label for="am">Amount</label><input id="am" class="mono" name="amount" inputmode="decimal" required></div>
+      <div class="field"><label for="mm">Memo</label><input id="mm" class="mono" name="extra_id" maxlength="120"><span class="hint">Only when the recipient asks for one.</span></div>
+    </div>
+    <div class="field"><label for="ds">Description</label><input id="ds" name="description" maxlength="500"></div>
+    <div class="row">
+      <div class="field" style="max-width:180px"><label for="tc">Two-factor code</label><input id="tc" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+      <button class="btn" type="submit">Create payout</button>
+    </div>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

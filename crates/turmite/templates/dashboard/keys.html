@@ -1,0 +1,45 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head"><div><h1>API keys</h1><p>Your shop's server sends a key in the <code>x-api-key</code> header. Base URL: <code>{{ api_base }}</code></p></div></header>
+
+{% if !new_key.is_empty() %}
+<section class="card card-pad">
+  <h2>New key</h2>
+  <p class="dim" style="margin:6px 0 12px">Copy it now. It is shown only once.</p>
+  <div class="secret"><code>{{ new_key }}</code><button class="btn btn-sm btn-2 copy" type="button" data-copy="{{ new_key }}" hidden>Copy</button></div>
+</section>
+{% endif %}
+
+<section class="card">
+  {% if keys.is_empty() %}
+  <div class="empty"><h3>No keys yet</h3><p>Create a key for each shop or service that calls the API.</p></div>
+  {% else %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Label</th><th>Key</th><th>Created by</th><th>Last used</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for k in keys %}
+      <tr>
+        <td>{{ k.label }}</td>
+        <td class="mono dim">tm_…{{ k.token_last4 }}</td>
+        <td class="dim">{% if let Some(e) = k.created_by_email %}{{ e }}{% endif %}</td>
+        <td class="dim">{% if let Some(t) = k.last_used_at %}{{ t.format("%Y-%m-%d %H:%M") }}{% else %}Never{% endif %}</td>
+        <td>{% if k.revoked_at.is_some() %}<span class="badge badge-bad">Revoked</span>{% else %}<span class="badge badge-ok">Active</span>{% endif %}</td>
+        <td class="num">{% if can_revoke && k.revoked_at.is_none() %}<form class="inline" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/keys/{{ k.api_key_id }}/revoke" data-confirm="Revoke this key? Calls with it stop working at once."><button class="btn btn-sm btn-ghost" type="submit">Revoke</button></form>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% endif %}
+</section>
+
+{% if can_create %}
+<section class="card">
+  <div class="card-head"><div><h2>Create a key</h2></div></div>
+  <form class="card-pad row" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/keys">
+    <div class="field"><label for="lb">Label</label><input id="lb" name="label" maxlength="80" placeholder="Shop server"></div>
+    <div class="field"><label for="tc">Two-factor code</label><input id="tc" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+    <button class="btn" type="submit">Create key</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

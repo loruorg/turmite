@@ -1,0 +1,12 @@
+[workspace]
+members = ["crates/turmite"]
+resolver = "3"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
+
+# Argon2 and the curve libraries are slow without optimisation.
+[profile.dev.package."*"]
+opt-level = 2

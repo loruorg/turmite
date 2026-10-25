@@ -1,0 +1,85 @@
+[package]
+name = "turmite"
+description = "Self-hosted crypto payment gateway"
+edition = "2024"
+license = "MIT"
+version = "0.1.0"
+repository = "https://github.com/loruorg/turmite"
+homepage = "https://turmite.com"
+
+[[bin]]
+name = "turmite"
+path = "src/main.rs"
+
+[dependencies]
+async-trait = "0.1.92"
+qrcode = { version = "0.14.1", default-features = false, features = ["svg"] }
+axum = { version = "0.8.9", features = ["macros", "multipart"] }
+chrono = { version = "0.4.45", features = ["serde"] }
+hex = "0.4.3"
+hmac = "0.13.0"
+jsonwebtoken = { version = "11.1.0", default-features = false, features = ["rust_crypto"] }
+rand = "0.10.3"
+reqwest = { version = "0.13.5", default-features = false, features = ["json", "query", "rustls"] }
+rust_decimal = { version = "1.43.0", features = ["serde-with-str"] }
+rust_decimal_macros = "1.40"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+sha2 = "0.11.1"
+sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "chrono", "json", "migrate", "macros", "rust_decimal"] }
+thiserror = "2.0.21"
+tokio = { version = "1.54.1", features = ["full"] }
+tower-http = { version = "0.7.1", features = ["cors", "trace"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt", "json"] }
+url = { version = "2.5.8", features = ["serde"] }
+uuid = { version = "1.29.0", features = ["serde", "v4"] }
+
+# Chain driver SDKs are feature-gated so the core engine compiles fast and a
+# deployment only pulls the chains it enables.
+alloy = { version = "2.5.0", features = ["full", "signer-local", "signer-mnemonic"], optional = true }
+ed25519-dalek = { version = "3.0.0", optional = true }
+bs58 = { version = "0.5.1", optional = true }
+base64 = "0.23.1"
+k256 = { version = "0.14.0", features = ["ecdsa"], optional = true }
+sha3 = { version = "0.12.0", optional = true }
+tonlib-core = { version = "0.26.11", optional = true }
+zeroize = "1"
+# Monero: checks that a view key belongs to its address.
+curve25519-dalek = "5.0.0"
+cookie = "0.18"
+chacha20poly1305 = "0.11"
+hkdf = "0.13"
+age = "0.12"
+argon2 = "0.6"
+sha1 = "0.11"
+ipnet = "2"
+askama = "0.16"
+clap = { version = "4", features = ["derive"] }
+lettre = { version = "0.11", default-features = false, features = ["builder", "smtp-transport", "tokio1", "tokio1-rustls-tls", "hostname"] }
+rpassword = "7"
+tower = { version = "0.5", features = ["util"] }
+image = { version = "0.25.10", default-features = false, features = ["png", "jpeg", "webp"] }
+
+[features]
+default = ["all-chains"]
+# Bitcoin needs no extra crate (bitcoind JSON-RPC over reqwest); the feature
+# stays so builds can name every chain.
+btc = []
+evm = ["dep:alloy"]
+sol = ["dep:ed25519-dalek", "dep:bs58"]
+tron = ["dep:k256", "dep:sha3", "dep:bs58"]
+ton = ["dep:tonlib-core", "dep:ed25519-dalek"]
+all-chains = ["btc", "evm", "sol", "tron", "ton"]
+
+[dev-dependencies]
+tokio = { version = "1.54.1", features = ["full"] }
+reqwest = { version = "0.13.5", default-features = false, features = ["json", "query", "form", "cookies", "rustls"] }
+serde_json = "1.0.154"
+uuid = { version = "1.29.0", features = ["v4"] }
+rust_decimal = "1.43.0"
+sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres"] }
+axum = { version = "0.8.9", features = ["macros"] }
+hmac = "0.13.0"
+sha2 = "0.11.1"
+hex = "0.4.3"

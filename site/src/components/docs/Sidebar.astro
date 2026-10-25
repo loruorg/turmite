@@ -1,0 +1,74 @@
+---
+import { docsNav, docsHref } from '../../lib/docs-nav';
+
+interface Props {
+  current: string;
+  labels: Record<string, string>;
+}
+const { current, labels } = Astro.props;
+---
+
+<ul class="sb">
+  {
+    docsNav.map((s) => (
+      <li class="sb-section">
+        <h2 class="sb-title">{s.section}</h2>
+        <ul>
+          {s.items
+            .filter((slug) => labels[slug])
+            .map((slug) => (
+              <li>
+                <a href={docsHref(slug)} aria-current={slug === current ? 'page' : undefined}>
+                  {labels[slug]}
+                </a>
+              </li>
+            ))}
+        </ul>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .sb,
+  .sb ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .sb-section + .sb-section {
+    margin-top: var(--space-6);
+  }
+  .sb-title {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin: 0 0 var(--space-3) 12px;
+  }
+  .sb a {
+    position: relative;
+    display: block;
+    padding: 5px 12px;
+    color: var(--muted);
+    font-size: 0.9063rem;
+    line-height: 1.4;
+    text-decoration: none;
+    border-left: 1px solid var(--line);
+    transition:
+      color 120ms,
+      border-color 120ms;
+  }
+  .sb a:hover {
+    color: var(--fg);
+    border-left-color: var(--line-strong);
+  }
+  .sb a[aria-current='page'] {
+    color: var(--fg);
+    font-weight: 550;
+    border-left: 2px solid var(--fg);
+    padding-left: 11px;
+  }
+</style>

@@ -1,0 +1,47 @@
+{% extends "checkout/base.html" %}
+{% block main %}
+<article class="card card-inv">
+  {% include "checkout/_store.html" %}
+  <section class="sum">
+    <p class="eyebrow">Amount due</p>
+    <p class="amt amt-fiat">{{ amount }}</p>
+    {% if !description.is_empty() %}<p class="fiat">{{ description }}</p>{% endif %}
+  </section>
+  {% if !look.message.is_empty() %}<p class="note">{{ look.message }}</p>{% endif %}
+  {% if !error.is_empty() %}<p class="alert" role="alert">{{ error }}</p>{% endif %}
+  {% if expired %}
+    <div class="empty-state">
+      <p class="ttl">This invoice expired</p>
+      <p class="dtl">Ask {{ look.store }} for a new payment link.</p>
+    </div>
+  {% else if groups.is_empty() %}
+    <div class="empty-state">
+      <p class="ttl">No payment method is open</p>
+      <p class="dtl">{{ look.store }} accepts no coin at the moment.</p>
+    </div>
+  {% else %}
+    <form method="post" action="{{ base }}/i/{{ token }}" class="pick">
+      <p class="eyebrow">Choose a coin</p>
+      {% for g in groups %}
+      <div class="net-group" role="group" aria-label="{{ g.name }}" style="--g:{{ loop.index0 }}">
+        <p class="net-name"><span class="net-ico">{{ g.glyph|safe }}</span>{{ g.name }}</p>
+        <div class="chips">
+          {% for c in g.coins %}
+          <button class="chip" type="submit" name="currency" value="{{ c.ticker }}" title="{{ c.name }} on {{ g.name }}">
+            <span class="coin-ico">{% if c.glyph.is_empty() %}<b class="mono-glyph">{{ c.symbol }}</b>{% else %}{{ c.glyph|safe }}{% endif %}</span>
+            <b>{{ c.symbol }}</b>
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+      {% if exchange %}
+      <button class="more-swap" type="submit" name="currency" value="any"><span class="swap-ico" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3 5.5h9.5L10 3M13 10.5H3.5L6 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Pay with another coin<small>Litecoin, Dogecoin and 200 more through an exchange</small></span></button>
+      {% endif %}
+    </form>
+  {% endif %}
+  {% if !cancel_url.is_empty() %}
+  <nav class="more" aria-label="Other options"><div class="more-links"><a href="{{ cancel_url }}">Cancel and return to {{ look.store }}</a></div></nav>
+  {% endif %}
+</article>
+{% endblock %}

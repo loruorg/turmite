@@ -1,0 +1,48 @@
+{
+  "name": "@turmite/sdk",
+  "version": "0.1.0",
+  "description": "Client and webhook verification for the Turmite merchant API",
+  "keywords": [
+    "turmite",
+    "crypto",
+    "payments",
+    "payment-gateway",
+    "webhooks"
+  ],
+  "homepage": "https://turmite.com",
+  "bugs": "https://github.com/loruorg/turmite/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loruorg/turmite.git",
+    "directory": "sdk/typescript"
+  },
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.js",
+    "prepublishOnly": "npm test"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

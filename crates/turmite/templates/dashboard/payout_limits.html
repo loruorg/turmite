@@ -1,0 +1,31 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head"><div><h1>Payout limits</h1><p>Amounts in USD at the rate when a payout is made. A payout above a limit waits for an admin's approval.</p></div></header>
+{% include "dashboard/payout_tabs.html" %}
+
+<div class="grid grid-2">
+  <section class="card stat"><div class="stat-label">Cleared in the last hour</div><div class="stat-value">{{ used_hour }} USD</div><div class="stat-sub">Pending, in flight and sent</div></section>
+  <section class="card stat"><div class="stat-label">Cleared in the last 24 hours</div><div class="stat-value">{{ used_day }} USD</div><div class="stat-sub">Pending, in flight and sent</div></section>
+</div>
+
+<section class="card" style="margin-top:20px">
+  <form class="card-pad form" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/payouts/limits">
+    <fieldset {% if !can_edit %}disabled{% endif %} class="form">
+    <div class="row">
+      <div class="field"><label for="mn">Minimum payout</label><input id="mn" class="mono" name="min_usd" inputmode="decimal" value="{{ min_usd }}"><span class="hint">Smaller payouts are refused. 0: no minimum.</span></div>
+      <div class="field"><label for="aa">Approve automatically up to</label><input id="aa" class="mono" name="auto_approve_usd" inputmode="decimal" value="{{ auto_approve_usd }}"><span class="hint">0: every payout needs an approval.</span></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="hl">Hourly limit</label><input id="hl" class="mono" name="hourly_usd" inputmode="decimal" value="{{ hourly_usd }}"><span class="hint">0: no limit.</span></div>
+      <div class="field"><label for="dl">Daily limit</label><input id="dl" class="mono" name="daily_usd" inputmode="decimal" value="{{ daily_usd }}"><span class="hint">0: no limit. The last 24 hours.</span></div>
+    </div>
+    {% if can_edit %}
+    <div class="row">
+      <div class="field" style="max-width:180px"><label for="tc">Two-factor code</label><input id="tc" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+      <button class="btn" type="submit">Save limits</button>
+    </div>
+    {% endif %}
+    </fieldset>
+  </form>
+</section>
+{% endblock %}

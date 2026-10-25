@@ -1,0 +1,118 @@
+---
+import { Code } from 'astro:components';
+import Icon from '../Icon.astro';
+import { monoLight, monoDark } from '../../lib/shiki-themes.mjs';
+
+const create = `curl https://pay.example.com/v1/payment \\
+  -H "x-api-key: $TM_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "price_amount": 25,
+    "price_currency": "usd",
+    "pay_currency": "btc",
+    "order_id": "ORDER-1001",
+    "order_description": "Order 1001",
+    "ipn_callback_url": "https://shop.example.com/turmite/ipn"
+  }'`;
+
+const response = `{
+  "payment_id": "5524759814",
+  "payment_status": "waiting",
+  "pay_address": "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
+  "pay_amount": 0.00041235,
+  "pay_currency": "btc"
+}`;
+
+const verify = `import crypto from 'node:crypto';
+import express from 'express';
+
+function verify(raw, headers, secret) {
+  const ts = String(headers['x-turmite-timestamp'] ?? '');
+  const sig = String(headers['x-turmite-signature'] ?? '');
+  if (Math.abs(Date.now() / 1000 - Number(ts)) > 300) return false;
+  const mac = crypto.createHmac('sha256', secret)
+    .update(\`\${ts}.\`).update(raw).digest('hex');
+  const want = Buffer.from(\`v1=\${mac}\`);
+  const got = Buffer.from(sig);
+  return got.length === want.length && crypto.timingSafeEqual(got, want);
+}
+
+const app = express();
+app.post('/turmite/ipn', express.raw({ type: 'application/json' }), (req, res) => {
+  if (!verify(req.body, req.headers, process.env.TM_IPN_SECRET)) {
+    return res.sendStatus(401);
+  }
+  const payment = JSON.parse(req.body);
+  if (payment.payment_status === 'finished') markPaid(payment.order_id);
+  res.sendStatus(200);
+});`;
+const themes = { light: monoLight, dark: monoDark };
+---
+
+<section class="section code-sec" aria-labelledby="code-title">
+  <div class="wrap">
+    <header class="sec-head">
+      <span class="sec-num">03 Integrate</span>
+      <h2 id="code-title">Create a payment. Verify the webhook.</h2>
+      <p>
+        One request creates a payment and its deposit address. Each status change reaches your shop as a signed
+        request. Code for Node, PHP, Python, Go and Ruby is in the <a href="/docs/webhooks/">webhook docs</a>.
+      </p>
+    </header>
+    <div class="code-grid">
+      <div class="panel reveal">
+        <div class="panel-bar">
+          <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="grow">POST /v1/payment</span>
+          <button class="copy-btn" type="button" data-copy={create} aria-label="Copy the request" hidden>
+            <Icon name="copy" class="i-copy" /><Icon name="check" class="i-check" />
+          </button>
+        </div>
+        <Code code={create} lang="bash" themes={themes} />
+        <div class="resp">
+          <span class="resp-label">201 Created</span>
+          <Code code={response} lang="json" themes={themes} />
+        </div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-bar">
+          <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="grow">webhook.js</span>
+          <button class="copy-btn" type="button" data-copy={verify} aria-label="Copy the code" hidden>
+            <Icon name="copy" class="i-copy" /><Icon name="check" class="i-check" />
+          </button>
+        </div>
+        <Code code={verify} lang="js" themes={themes} />
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .code-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-5);
+    margin-top: var(--space-8);
+    align-items: start;
+  }
+  .resp {
+    border-top: 1px dashed var(--line-strong);
+  }
+  .resp-label {
+    display: block;
+    padding: 12px 20px 0;
+    font: 500 0.6875rem var(--mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .resp :global(.astro-code) {
+    padding-top: 8px;
+  }
+  @media (max-width: 960px) {
+    .code-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

@@ -1,0 +1,258 @@
+---
+import Icon from '../Icon.astro';
+import { HERO, heroTurmite } from '../../lib/turmite';
+
+// Static frame: the same state the 3D scene starts from, seen from above.
+const t = heroTurmite();
+const G = HERO.size;
+let cells = '';
+for (let i = 0; i < G * G; i++) if (t.grid[i]) cells += `M${i % G} ${Math.floor(i / G)}h1v1h-1z`;
+const install = 'curl -fsSL https://turmite.com/install.sh | sudo sh';
+---
+
+<section class="hero" aria-labelledby="hero-title">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <a class="hero-tag" href="/blog/turmite-0-1-0/">
+        <span class="v">0.1.0</span>
+        <span>First release</span>
+        <Icon name="arrow" size={14} />
+      </a>
+      <h1 id="hero-title">Crypto payments on your own server.</h1>
+      <p class="lead">
+        Turmite is a free, self-hosted payment gateway. Customers pay to addresses that your keys control. Your shop gets
+        a signed webhook when the payment is complete.
+      </p>
+      <div class="cta">
+        <a class="btn btn-primary" href="/docs/install/">Install on a server</a>
+        <a class="btn" href="/docs/">Read the docs</a>
+      </div>
+      <div class="cmd">
+        <span class="prompt" aria-hidden="true">$</span>
+        <code>{install}</code>
+        <button class="copy-btn" type="button" data-copy={install} aria-label="Copy the install command" hidden>
+          <Icon name="copy" class="i-copy" />
+          <Icon name="check" class="i-check" />
+        </button>
+      </div>
+      <ul class="hero-facts">
+        <li>MIT license</li>
+        <li>No fees</li>
+        <li>Works with JavaScript off</li>
+      </ul>
+    </div>
+    <div class="hero-visual" data-hero>
+      <svg class="hero-static" viewBox={`0 0 ${G} ${G}`} aria-hidden="true" focusable="false">
+        <defs>
+          <pattern id="hero-grid" width="1" height="1" patternUnits="userSpaceOnUse">
+            <path d="M1 0H0V1" fill="none" stroke="#000" stroke-opacity="0.075" stroke-width="0.12"></path>
+          </pattern>
+          <radialGradient id="hero-fade" cx="0.5" cy="0.5" r="0.62">
+            <stop offset="0.55" stop-color="#fff"></stop>
+            <stop offset="1" stop-color="#000"></stop>
+          </radialGradient>
+          <mask id="hero-mask"><rect width={G} height={G} fill="url(#hero-fade)"></rect></mask>
+        </defs>
+        <rect width={G} height={G} fill="url(#hero-grid)" mask="url(#hero-mask)"></rect>
+        <path d={cells} fill="#000" stroke="#fff" stroke-width="0.14"></path>
+        <rect x={t.x + 0.07} y={t.y + 0.07} width="0.86" height="0.86" fill="#fff" stroke="#000" stroke-width="0.12"
+        ></rect>
+      </svg>
+      <canvas aria-hidden="true"></canvas>
+      <p class="hero-caption" aria-hidden="true">
+        <span>Langton's ant</span><span>step {HERO.steps.toLocaleString('en-US')}</span>
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--line);
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+    gap: var(--space-6);
+    align-items: center;
+    min-height: min(820px, calc(100svh - var(--header-h)));
+    padding-block: var(--space-8);
+  }
+  .hero-copy {
+    position: relative;
+    z-index: 1;
+    max-width: 640px;
+  }
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 30px;
+    padding: 0 10px 0 4px;
+    border: 1px solid var(--line-strong);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text);
+    text-decoration: none;
+    transition: border-color 140ms;
+  }
+  .hero-tag:hover {
+    border-color: var(--fg);
+  }
+  .hero-tag .v {
+    display: inline-grid;
+    place-items: center;
+    height: 22px;
+    padding: 0 7px;
+    background: var(--fg);
+    color: var(--bg);
+    font: 500 0.75rem var(--mono);
+  }
+  .hero-tag svg {
+    color: var(--muted);
+    transition: transform 180ms var(--ease-out);
+  }
+  .hero-tag:hover svg {
+    transform: translateX(2px);
+  }
+  h1 {
+    margin-top: var(--space-6);
+    font-size: clamp(2.625rem, 1.3rem + 3.6vw, 4.375rem);
+    font-weight: 660;
+    line-height: 0.98;
+    letter-spacing: -0.048em;
+  }
+  .lead {
+    margin-top: var(--space-5);
+    font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+    line-height: 1.55;
+    color: var(--muted);
+    max-width: 50ch;
+  }
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+  }
+  .cmd {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: var(--space-5);
+    max-width: 100%;
+    height: 44px;
+    padding: 0 6px 0 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    width: fit-content;
+  }
+  .cmd .prompt {
+    color: var(--faint);
+  }
+  .cmd code {
+    font-size: inherit;
+    white-space: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    color: var(--fg);
+  }
+  .hero-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    list-style: none;
+    margin: var(--space-6) 0 0;
+    padding: 0;
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+  .hero-facts li {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hero-facts li::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--fg);
+  }
+  .hero-visual {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    justify-self: end;
+    aspect-ratio: 1;
+  }
+  .hero-static,
+  .hero-visual canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .hero-visual canvas {
+    opacity: 0;
+    transition: opacity 400ms linear;
+  }
+  .hero-visual:global(.is-live) canvas {
+    opacity: 1;
+  }
+  .hero-static {
+    transition: opacity 400ms linear 200ms;
+  }
+  .hero-visual:global(.is-live) .hero-static {
+    opacity: 0;
+  }
+  .hero-caption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -4px;
+    display: flex;
+    justify-content: space-between;
+    font: 500 0.6875rem var(--mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  @media (max-width: 960px) {
+    .hero-grid {
+      grid-template-columns: minmax(0, 1fr);
+      min-height: 0;
+      padding-block: var(--space-7) var(--space-6);
+      gap: var(--space-5);
+    }
+    .hero-visual {
+      justify-self: center;
+      max-width: 560px;
+      margin-inline: calc(-1 * var(--space-3));
+      width: calc(100% + 2 * var(--space-3));
+    }
+  }
+  .cta .btn {
+    white-space: nowrap;
+  }
+  @media (max-width: 520px) {
+    .cmd {
+      width: 100%;
+      height: auto;
+      padding-block: 10px;
+      align-items: flex-start;
+    }
+    .cmd code {
+      white-space: normal;
+      overflow-wrap: anywhere;
+      line-height: 1.6;
+    }
+    .cta .btn {
+      flex: 1 1 auto;
+      justify-content: center;
+    }
+  }
+</style>

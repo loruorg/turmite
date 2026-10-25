@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex">
+<title>{% if mode == "setup" %}Set up{% else %}Sign in{% endif %} · Turmite</title>
+<link rel="icon" href="{{ base }}/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="{{ base }}/assets/dashboard.css">
+</head>
+<body>
+<main class="auth">
+  <div class="auth-card">
+    <div class="brand">{% include "logo.svg" %}<span>turmite</span></div>
+    {% if mode == "setup" %}
+      <h1>Create the root account</h1>
+      <p>This account can do everything on this server. Turn on two-factor authentication right after.</p>
+    {% else if mode == "code" %}
+      <h1>Two-factor code</h1>
+      <p>Enter the 6-digit code from your authenticator app.</p>
+    {% else %}
+      <h1>Sign in</h1>
+      <p>Use your Turmite account.</p>
+    {% endif %}
+    {% if !error.is_empty() %}<div class="alert" role="alert">{{ error }}</div><br>{% endif %}
+    {% if mode == "code" %}
+    <form class="form" method="post" action="{{ base }}/dashboard/login/code">
+      <div class="field">
+        <label for="code">Code</label>
+        <input class="code" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" required autofocus>
+      </div>
+      <button class="btn btn-block" type="submit">Verify</button>
+    </form>
+    {% else %}
+    <form class="form" method="post" action="{{ base }}/dashboard/{% if mode == "setup" %}setup{% else %}login{% endif %}">
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="username" value="{{ email }}" required autofocus>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="{% if mode == "setup" %}new-password{% else %}current-password{% endif %}" minlength="{% if mode == "setup" %}12{% else %}1{% endif %}" required>
+        {% if mode == "setup" %}<span class="hint">At least 12 characters.</span>{% endif %}
+      </div>
+      {% if mode == "setup" %}
+      <div class="field">
+        <label for="password2">Repeat password</label>
+        <input id="password2" name="password2" type="password" autocomplete="new-password" minlength="12" required>
+      </div>
+      {% endif %}
+      <button class="btn btn-block" type="submit">{% if mode == "setup" %}Create account{% else %}Sign in{% endif %}</button>
+    </form>
+    {% endif %}
+    {% if testnet %}<p class="auth-foot">Testnet server</p>{% endif %}
+  </div>
+</main>
+</body>
+</html>

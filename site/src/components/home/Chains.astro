@@ -1,0 +1,127 @@
+---
+import Glyph from './Glyph.astro';
+import Icon from '../Icon.astro';
+import { networks } from '../../lib/coins';
+---
+
+<section class="chains" aria-labelledby="chains-title">
+  <div class="wrap">
+    <div class="chains-head">
+      <h2 id="chains-title">Nine networks. Native coins, USDC and USDT.</h2>
+      <a class="more" href="/docs/networks/">Tickers and networks <Icon name="arrow" /></a>
+    </div>
+    <ul class="chain-grid">
+      {
+        networks.map((n, i) => (
+          <li style={`--i:${i}`}>
+            <Glyph code={n.code} />
+            <span class="name">{n.name}</span>
+            <span class="assets">{n.assets.join(' ')}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .chains {
+    padding-block: var(--space-8);
+  }
+  .chains-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3) var(--space-6);
+    margin-bottom: var(--space-6);
+  }
+  .chains-head h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: -0.012em;
+  }
+  .chain-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--fg);
+    border: 1px solid var(--fg);
+  }
+  .chain-grid li {
+    display: grid;
+    gap: 4px;
+    align-content: start;
+    padding: 22px 16px 18px;
+    background: var(--bg);
+    color: var(--fg);
+    transition:
+      background-color 160ms var(--ease-out),
+      color 160ms var(--ease-out);
+  }
+  .chain-grid li:hover {
+    background: var(--fg);
+    color: var(--bg);
+  }
+  .chain-grid svg {
+    margin-bottom: 18px;
+  }
+  .name {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
+  .assets {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.02em;
+    opacity: 0.62;
+  }
+  @media (max-width: 1100px) {
+    .chain-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 420px) {
+    .chain-grid li {
+      padding: 16px 12px 14px;
+    }
+    .chain-grid svg {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 12px;
+    }
+  }
+  /* Cells flip as the row scrolls in, like cells under a turmite. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .chain-grid li {
+        animation: flip linear both;
+      }
+      .chains .chain-grid li {
+        animation-timeline: view();
+        animation-range: cover calc(4% + var(--i) * 2.5%) cover calc(16% + var(--i) * 2.5%);
+      }
+      .chains .chain-grid li:hover {
+        animation: none;
+      }
+    }
+  }
+  /* A wave of inverted cells crosses the row once, left to right. */
+  @keyframes flip {
+    0%,
+    100% {
+      background-color: var(--bg);
+      color: var(--fg);
+    }
+    35%,
+    65% {
+      background-color: var(--fg);
+      color: var(--bg);
+    }
+  }
+</style>

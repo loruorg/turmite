@@ -1,0 +1,61 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head"><div><h1>Networks</h1><p>Turmite reads each chain through the nodes you add here. Add two or more per network: when the node in use fails twice in a row, the worker moves to the next node, and moves back when the first node works again. {% if !mainnet %}This is a testnet server.{% endif %}</p></div></header>
+<div class="grid">
+{% for n in networks %}
+<section class="card">
+  <div class="card-head">
+    <div><h2>{{ n.name }} <span class="dim small mono">{{ n.code }}</span></h2><p>{% if !n.tickers.is_empty() %}{{ n.tickers }}{% endif %}{% if !n.last_block.is_empty() %} · block {{ n.last_block }}, new {{ n.last_block_age }}{% endif %}</p></div>
+    <div class="actions">{% if n.stale %}<span class="badge badge-bad" title="No new block since {{ n.last_block_age }}">No new block</span>{% endif %}{% if !n.enabled %}<span class="badge">Off</span>{% else if n.connected %}<span class="badge badge-ok">Connected</span>{% else if n.nodes.is_empty() %}<span class="badge badge-plain">No node</span>{% else %}<span class="badge badge-bad">Not connected</span>{% endif %}</div>
+  </div>
+  {% if !n.nodes.is_empty() %}
+  <div class="table-wrap"><table><thead><tr><th>Node</th><th>URL</th><th>Status</th><th class="num">Height</th><th>Checked</th><th></th></tr></thead><tbody>
+  {% for x in n.nodes %}
+    <tr><td>{{ x.label }}{% if x.in_use %} <span class="badge badge-plain">In use</span>{% endif %}</td><td class="mono small truncate">{{ x.url }}</td>
+    <td class="small">{% if x.state == "error" %}<span class="badge badge-bad">Error</span>{% else if x.state == "ok" %}<span class="badge badge-ok">OK</span>{% else if x.state == "off" %}<span class="badge">Off</span>{% else %}<span class="badge">Unknown</span>{% endif %}{% if !x.lag.is_empty() %} <span class="{% if x.behind %}badge badge-bad{% else %}dim{% endif %}">{{ x.lag }}</span>{% endif %}{% if !x.error.is_empty() %}<span class="dim node-error">{{ x.error }}</span>{% endif %}</td>
+    <td class="num mono small">{{ x.height }}</td>
+    <td class="small dim">{{ x.checked }}</td>
+    <td class="num"><form class="inline row" method="post" action="{{ shell.base }}/dashboard/admin/nodes/{{ x.id }}/delete" data-confirm="Remove this node?"><input class="mono input-sm" name="totp" placeholder="Your code" inputmode="numeric" aria-label="Your two-factor code"><button class="btn btn-sm btn-ghost" type="submit">Remove</button></form></td></tr>
+  {% endfor %}
+  </tbody></table></div>
+  {% endif %}
+  <form class="card-pad row" method="post" action="{{ shell.base }}/dashboard/admin/networks/{{ n.id }}/nodes" style="border-top:1px solid var(--line)">
+    <div class="field" style="flex:3"><label for="u{{ n.id }}">Add node</label><input id="u{{ n.id }}" class="mono" name="url" type="url" placeholder="{{ n.hint }}" required spellcheck="false" autocomplete="off"><span class="hint">{{ n.hint }}. Stored encrypted; API keys in the URL are never shown. Nodes are used in the order you add them.</span></div>
+    <div class="field" style="max-width:150px"><label for="l{{ n.id }}">Label</label><input id="l{{ n.id }}" name="label" maxlength="40"></div>
+    <div class="field" style="max-width:130px"><label for="t{{ n.id }}">Two-factor code</label><input id="t{{ n.id }}" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+    <button class="btn" type="submit">Add</button>
+  </form>
+  <form class="card-pad row" method="post" action="{{ shell.base }}/dashboard/admin/networks/{{ n.id }}" style="border-top:1px solid var(--line)">
+    <div class="field" style="max-width:180px"><label for="c{{ n.id }}">Confirmations</label><input id="c{{ n.id }}" name="confirmations" type="number" min="0" max="10000" value="{{ n.confirmations }}" required></div>
+    <label class="check" style="align-self:center"><input type="checkbox" name="enabled" value="1"{% if n.enabled %} checked{% endif %}> Network on</label>
+    <div class="field" style="max-width:130px"><label for="ct{{ n.id }}">Two-factor code</label><input id="ct{{ n.id }}" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"><span class="hint">Needed to lower confirmations.</span></div>
+    <button class="btn btn-2" type="submit">Save</button>
+  </form>
+  <details class="card-pad" style="border-top:1px solid var(--line)">
+    <summary>Assets ({{ n.tokens.len() }})</summary>
+    <form class="tokens-form" method="post" action="{{ shell.base }}/dashboard/admin/networks/{{ n.id }}/tokens">
+      <div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>On</th><th>Ticker</th><th>Asset</th><th>Contract</th><th class="num">Decimals</th></tr></thead><tbody>
+      {% for t in n.tokens %}
+        <tr><td><input type="checkbox" name="t{{ t.id }}" value="1" aria-label="{{ t.ticker }} on"{% if t.enabled %} checked{% endif %}></td><td class="mono">{{ t.ticker }}</td><td>{{ t.symbol }}</td><td class="mono small truncate">{% if t.contract.is_empty() %}<span class="dim">Native coin</span>{% else %}{{ t.contract }}{% endif %}</td><td class="num">{{ t.decimals }}</td></tr>
+      {% endfor %}
+      </tbody></table></div>
+      <div class="row" style="margin-top:12px">
+        <div class="field" style="max-width:130px"><label for="tt{{ n.id }}">Two-factor code</label><input id="tt{{ n.id }}" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+        <button class="btn btn-2" type="submit">Save assets</button>
+      </div>
+    </form>
+    {% if n.has_tokens %}
+    <form class="row" method="post" action="{{ shell.base }}/dashboard/admin/networks/{{ n.id }}/tokens/add" style="margin-top:20px">
+      <div class="field" style="max-width:140px"><label for="ts{{ n.id }}">Asset</label><select id="ts{{ n.id }}" name="symbol">{% for (symbol, name) in assets %}<option value="{{ symbol }}">{{ symbol }} · {{ name }}</option>{% endfor %}</select></div>
+      <div class="field" style="max-width:140px"><label for="tk{{ n.id }}">Ticker</label><input id="tk{{ n.id }}" class="mono" name="ticker" required maxlength="20" pattern="[a-z0-9]{2,20}" placeholder="usdcbase" spellcheck="false" autocomplete="off"></div>
+      <div class="field" style="max-width:100px"><label for="td{{ n.id }}">Decimals</label><input id="td{{ n.id }}" name="decimals" type="number" min="0" max="30" required></div>
+      <div class="field" style="flex:2"><label for="tc{{ n.id }}">Contract</label><input id="tc{{ n.id }}" class="mono" name="contract" required spellcheck="false" autocomplete="off"><span class="hint">Copy the contract address from the token issuer. A wrong address loses payments.</span></div>
+      <div class="field" style="max-width:130px"><label for="ta{{ n.id }}">Two-factor code</label><input id="ta{{ n.id }}" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+      <button class="btn" type="submit">Add token</button>
+    </form>
+    {% endif %}
+  </details>
+</section>
+{% endfor %}
+</div>
+{% endblock %}

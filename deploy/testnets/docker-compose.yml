@@ -1,0 +1,371 @@
+# Turmite local testnet stack: PostgreSQL and a local node for each chain.
+# All images run on arm64 and amd64. See README.md.
+#
+#   docker compose -f deploy/testnets/docker-compose.yml up -d                # postgres, bitcoind, monerod, wallet-rpc, anvil
+#   docker compose -f deploy/testnets/docker-compose.yml --profile all up -d  # + Solana, Tron, TON
+
+name: turmite-testnets
+
+services:
+  # ---- Application database (Postgres everywhere) -------------------------
+  postgres:
+    image: postgres:18.6-trixie
+    container_name: turmite-postgres
+    environment:
+      POSTGRES_USER: turmite
+      POSTGRES_PASSWORD: turmite
+      POSTGRES_DB: turmite
+    ports:
+      - "5433:5432" # host 5433 (5432 may be taken by another local Postgres)
+    volumes:
+      # Postgres 18 keeps PGDATA in a versioned subdirectory, so mount the parent.
+      - postgres18-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U turmite -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---- Bitcoin (regtest: deterministic, mine-on-demand) -------------------
+  bitcoind:
+    image: bitcoin/bitcoin:31.1
+    container_name: turmite-bitcoind
+    # Arguments that start with "-" go to bitcoind (official image entrypoint).
+    command:
+      - -regtest
+      - -server=1
+      - -txindex=1
+      - -fallbackfee=0.0002
+      - -rpcbind=0.0.0.0
+      - -rpcallowip=0.0.0.0/0
+      - -rpcuser=devuser
+      - -rpcpassword=devpass
+      - -rpcport=18443
+      - -zmqpubrawblock=tcp://0.0.0.0:28332
+      - -zmqpubrawtx=tcp://0.0.0.0:28333
+    ports:
+      - "18443:18443" # regtest JSON-RPC
+      - "18444:18444" # regtest P2P
+      - "28332:28332" # ZMQ rawblock (for block notifications)
+      - "28333:28333" # ZMQ rawtx
+    volumes:
+      - bitcoin-data:/home/bitcoin/.bitcoin
+    healthcheck:
+      test:
+        - CMD
+        - bitcoin-cli
+        - -regtest
+        - -rpcuser=devuser
+        - -rpcpassword=devpass
+        - -rpcport=18443
+        - getblockchaininfo
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---- Monero (regtest daemon) --------------------------------------------
+  monerod:
+    image: ghcr.io/sethforprivacy/simple-monerod:v0.18.5.4
+    container_name: turmite-monerod
+    stop_grace_period: 60s
+    command:
+      - --regtest
+      - --offline
+      - --fixed-difficulty=1
+      # Regtest deletes its chain at each start unless told to keep it; a lost
+      # chain leaves every wallet out of step.
+      - --keep-fakechain
+      - --db-sync-mode=safe
+      - --rpc-bind-ip=0.0.0.0
+      - --rpc-bind-port=18081
+      - --confirm-external-bind
+      - --disable-rpc-ban
+    ports:
+      - "18081:18081" # monerod JSON-RPC
+    volumes:
+      - monerod-data:/home/monero
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:18081/get_info > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ---- Monero wallet RPC (one subaddress per payment) ---------------------
+  monero-wallet-rpc:
+    image: ghcr.io/sethforprivacy/simple-monero-wallet-rpc:v0.18.5.4
+    container_name: turmite-monero-wallet-rpc
+    depends_on:
+      - monerod
+    # The image entrypoint injects --non-interactive and binds loopback only,
+    # unless RPC_EXPOSE_UNAUTHENTICATED=1 (then 0.0.0.0 + --confirm-external-bind).
+    # Dev only: the RPC has no login, so publish it on host loopback only.
+    environment:
+      RPC_EXPOSE_UNAUTHENTICATED: "1"
+    command:
+      - --daemon-address=monerod:18081
+      - --trusted-daemon
+      - --rpc-bind-port=18083
+      - --disable-rpc-login
+      - --wallet-dir=/home/monero/wallet
+      - --allow-mismatched-daemon-version
+    ports:
+      - "127.0.0.1:18083:18083" # wallet RPC (unauthenticated: loopback only)
+    volumes:
+      - monero-wallet-data:/home/monero/wallet
+
+  # ---- Monero payer wallet RPC (tests/dev: plays the customer) ------------
+  # wallet-rpc keeps one wallet open per process, and Monero does not list a
+  # send between subaddresses of one wallet as incoming. So the customer side
+  # needs its own wallet-rpc.
+  monero-wallet-rpc-payer:
+    image: ghcr.io/sethforprivacy/simple-monero-wallet-rpc:v0.18.5.4
+    container_name: turmite-monero-wallet-rpc-payer
+    depends_on:
+      - monerod
+    environment:
+      RPC_EXPOSE_UNAUTHENTICATED: "1"
+    command:
+      - --daemon-address=monerod:18081
+      - --trusted-daemon
+      - --rpc-bind-port=18084
+      - --disable-rpc-login
+      - --wallet-dir=/home/monero/wallet
+      - --allow-mismatched-daemon-version
+    ports:
+      - "127.0.0.1:18084:18084" # payer wallet RPC (unauthenticated: loopback only)
+    volumes:
+      - monero-payer-wallet-data:/home/monero/wallet
+
+  # ---- Ethereum / EVM local dev chain (anvil) -----------------------------
+  # BNB Smart Chain has its own node below (anvil-bsc, chain id 97).
+  anvil:
+    image: ghcr.io/foundry-rs/foundry:v1.8.6
+    container_name: turmite-anvil
+    # foundry image ENTRYPOINT is ["/bin/sh","-c"], which would split a string
+    # command and swallow anvil's flags. Override the entrypoint to the binary
+    # and pass flags as a proper list instead.
+    entrypoint: ["anvil"]
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8545"
+      - --chain-id
+      - "31337"
+      - --accounts
+      - "10"
+      - --balance
+      - "10000"
+      - --block-time
+      - "2"
+      - --mnemonic
+      - "test test test test test test test test test test test junk"
+    ports:
+      - "8545:8545"
+
+  # ---- BNB Smart Chain local dev chain (anvil as chain id 97) -------------
+  # Same EVM client as Ethereum; a separate node so the `bsc` chain is tested
+  # with its own chain id.
+  anvil-bsc:
+    image: ghcr.io/foundry-rs/foundry:v1.8.6
+    container_name: turmite-anvil-bsc
+    entrypoint: ["anvil"]
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8545"
+      - --chain-id
+      - "97"
+      - --accounts
+      - "10"
+      - --balance
+      - "10000"
+      - --block-time
+      - "3"
+      - --mnemonic
+      - "test test test test test test test test test test test junk"
+    ports:
+      - "8546:8545"
+
+  # ---- Solana (local test validator) -- profile: solana / all -------------
+  solana:
+    image: beeman/solana-test-validator:4.1.1
+    container_name: turmite-solana
+    profiles: ["solana", "all"]
+    # A test validator that restarts on its old ledger can stall: start fresh.
+    command: ["solana-test-validator", "--reset"]
+    # Agave 2.0+ uses io_uring for snapshot unpacking; Docker's default
+    # seccomp profile blocks it, so it must be unconfined.
+    security_opt:
+      - seccomp:unconfined
+    ports:
+      - "8899:8899" # JSON-RPC
+      - "8900:8900" # WebSocket
+      - "9900:9900" # faucet
+
+  # ---- TON HTTP API against public testnet liteservers -- profile: ton ----
+  # Connects to the public TON *testnet* liteservers (not a local full node).
+  # Requires the testnet global config fetched to ./ton/testnet.json first:
+  #   mkdir -p deploy/testnets/ton
+  #   curl -sL https://ton-blockchain.github.io/testnet-global.config.json \
+  #     -o deploy/testnets/ton/testnet.json
+  ton-http-api:
+    image: toncenter/ton-http-api:v2.0.68
+    container_name: turmite-ton-http-api
+    profiles: ["ton", "all"]
+    environment:
+      TON_API_TONLIB_LITESERVER_CONFIG: /run/testnet.json
+      TON_API_GET_METHODS_ENABLED: "1"
+      TON_API_LOGS_LEVEL: WARNING
+    ports:
+      - "8081:8081" # the API listens on 8081 in the container
+    volumes:
+      - ./ton/testnet.json:/run/testnet.json:ro
+
+  # ---- Tron private chain (prefunded) -- profile: tron / all --------------
+  # TRON Runtime Environment (native arm64 + amd64). Prints 10 prefunded
+  # accounts to its logs on startup (also at /admin/accounts).
+  tron-quickstart:
+    image: tronbox/tre:2.0.0
+    container_name: turmite-tron
+    profiles: ["tron", "all"]
+    # TRE exits when it starts on its old state (chain data, and the config it
+    # rewrites at start). Keep the data in tmpfs and restore the original
+    # config before each start: every start is a new chain with new accounts.
+    tmpfs:
+      - /tron/FullNode/output-directory
+      - /tron/FullNode/logs
+      - /config
+    entrypoint:
+      - sh
+      - -c
+      - '[ -f /tron/fullnode.conf.orig ] || cp /tron/FullNode/fullnode.conf /tron/fullnode.conf.orig; cp /tron/fullnode.conf.orig /tron/FullNode/fullnode.conf; exec "$$0" "$$@"'
+    command: ["./quickstart", "v2.0.0"]
+    environment:
+      - accounts=10
+      - defaultBalance=100000
+    ports:
+      - "9090:9090" # FullNode HTTP API
+
+  # ---- TON private chain (MyLocalTon genesis validator) -- profile: ton-local
+  # A local TON chain with prefunded faucet wallets (see README). The genesis
+  # node writes its IP into the chain config, so it needs a fixed address.
+  ton-genesis:
+    image: ghcr.io/neodix42/mylocalton-docker:v4.3.0
+    container_name: turmite-ton-genesis
+    profiles: ["ton-local", "all"]
+    environment:
+      GENESIS: "true"
+      NAME: genesis
+      VERBOSITY: "1"
+      VERSION_CAPABILITIES: "11"
+      CUSTOM_PARAMETERS: "--state-ttl 315360000 --archive-ttl 315360000"
+    volumes:
+      - ton-shared-data:/usr/share/data
+      - ton-genesis-db:/var/ton-work/db
+    healthcheck:
+      test: /usr/local/bin/lite-client -a 127.0.0.1:40004 -p /var/ton-work/db/liteserver.pub -t 3 -c last
+      interval: 15s
+      timeout: 5s
+      retries: 40
+    networks:
+      ton:
+        ipv4_address: 10.231.42.10
+
+  # toncenter API v2 for the local chain (same API as testnet.toncenter.com).
+  # The Python image: the arm64 build of ton-http-api-cpp dies with SIGILL on
+  # Apple Silicon.
+  ton-local-http-api:
+    image: toncenter/ton-http-api:v2.0.68
+    container_name: turmite-ton-local-http-api
+    profiles: ["ton-local", "all"]
+    depends_on:
+      ton-genesis:
+        condition: service_healthy
+    environment:
+      TON_API_TONLIB_LITESERVER_CONFIG: /usr/share/data/global.config.json
+      TON_API_GET_METHODS_ENABLED: "1"
+      TON_API_LOGS_LEVEL: WARNING
+    ports:
+      - "8082:8081" # API v2 at http://127.0.0.1:8082
+    volumes:
+      - ton-shared-data:/usr/share/data:ro
+    networks:
+      ton:
+        ipv4_address: 10.231.42.20
+
+  # ---- Public testnets that need a local client -- profile: public -------
+  # Bitcoin signet node (the BTC driver needs a node wallet). It must sync
+  # before it sees payments; pruned to keep the disk small.
+  bitcoind-signet:
+    image: bitcoin/bitcoin:31.1
+    container_name: turmite-bitcoind-signet
+    profiles: ["public"]
+    command:
+      - -signet
+      - -server=1
+      - -prune=2000
+      - -rpcbind=0.0.0.0
+      - -rpcallowip=0.0.0.0/0
+      - -rpcuser=devuser
+      - -rpcpassword=devpass
+      - -rpcport=38332
+    ports:
+      - "127.0.0.1:38332:38332" # signet JSON-RPC
+    volumes:
+      - bitcoin-signet-data:/home/bitcoin/.bitcoin
+
+  # Monero stagenet wallet-rpcs on a public stagenet node (untrusted daemon):
+  # one for the engine, one that plays the customer.
+  monero-wallet-rpc-stagenet:
+    image: ghcr.io/sethforprivacy/simple-monero-wallet-rpc:v0.18.5.4
+    container_name: turmite-monero-wallet-rpc-stagenet
+    profiles: ["public"]
+    environment:
+      RPC_EXPOSE_UNAUTHENTICATED: "1"
+    command:
+      - --stagenet
+      - --daemon-address=${TURMITE_XMR_STAGENET_DAEMON:-stagenet.xmr-tw.org:38081}
+      - --rpc-bind-port=38083
+      - --disable-rpc-login
+      - --wallet-dir=/home/monero/wallet
+    ports:
+      - "127.0.0.1:38083:38083"
+    volumes:
+      - monero-stagenet-wallet-data:/home/monero/wallet
+
+  monero-wallet-rpc-stagenet-payer:
+    image: ghcr.io/sethforprivacy/simple-monero-wallet-rpc:v0.18.5.4
+    container_name: turmite-monero-wallet-rpc-stagenet-payer
+    profiles: ["public"]
+    environment:
+      RPC_EXPOSE_UNAUTHENTICATED: "1"
+    command:
+      - --stagenet
+      - --daemon-address=${TURMITE_XMR_STAGENET_DAEMON:-stagenet.xmr-tw.org:38081}
+      - --rpc-bind-port=38084
+      - --disable-rpc-login
+      - --wallet-dir=/home/monero/wallet
+    ports:
+      - "127.0.0.1:38084:38084"
+    volumes:
+      - monero-stagenet-payer-wallet-data:/home/monero/wallet
+
+networks:
+  ton:
+    ipam:
+      config:
+        - subnet: 10.231.42.0/24
+
+volumes:
+  postgres18-data:
+  bitcoin-data:
+  monerod-data:
+  monero-wallet-data:
+  monero-payer-wallet-data:
+  ton-shared-data:
+  bitcoin-signet-data:
+  monero-stagenet-wallet-data:
+  monero-stagenet-payer-wallet-data:
+  ton-genesis-db:

@@ -1,0 +1,53 @@
+{% extends "checkout/base.html" %}
+{% block main %}
+<article class="card card-pay card-trade">
+  {% include "checkout/_store.html" %}
+  <section class="sum">
+    <p class="eyebrow">Send exactly</p>
+    <p class="amt"><span class="coin-ico">{% if glyph.is_empty() %}<b class="mono-glyph">{{ ticker }}</b>{% else %}{{ glyph|safe }}{% endif %}</span><code class="sel" tabindex="0">{{ amount }}</code><span class="unit">{{ ticker }}</span></p>
+    <p class="fiat">The exchange pays {{ pays }}.</p>
+  </section>
+  <iframe class="frame" src="{{ frame_src }}" title="Swap status"></iframe>
+  {% if !done %}
+  <section class="pay">
+    <figure class="qr">
+      <div class="qr-code">{{ qr|safe }}</div>
+      <figcaption>Exchange deposit address</figcaption>
+    </figure>
+    <div class="fields">
+      <div class="fl">
+        <span class="lbl">Network</span>
+        <span class="val net">{% if !glyph.is_empty() %}<span class="net-ico">{{ glyph|safe }}</span>{% endif %}{{ network }}</span>
+      </div>
+      <div class="fl">
+        <span class="lbl">Amount</span>
+        <span class="val"><code class="sel" tabindex="0">{{ amount }}</code> <span class="unit">{{ ticker }}</span></span>
+      </div>
+      <div class="fl">
+        <span class="lbl">Address</span>
+        <span class="val"><code class="sel addr" tabindex="0">{{ address }}</code></span>
+      </div>
+      {% if !memo.is_empty() %}
+      <div class="fl fl-memo">
+        <span class="lbl">Memo <b>required</b></span>
+        <span class="val"><code class="sel" tabindex="0">{{ memo }}</code></span>
+      </div>
+      {% endif %}
+      <p class="warn"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 15 14H1z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 6v3.6M8 11.4v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Send {{ ticker }} on {{ network }} only. Send the exact amount{% if !expires.is_empty() %} before {{ expires }}{% endif %}.</p>
+      <dl class="facts">
+        <div><dt>Exchange</dt><dd>{{ provider }}</dd></div>
+        {% if !kyc.is_empty() %}<div><dt>KYC rating</dt><dd>{{ kyc }}</dd></div>{% endif %}
+        {% if !rate.is_empty() %}<div><dt>Rate</dt><dd>{{ rate }}</dd></div>{% endif %}
+        <div><dt>Swap ID</dt><dd><code class="sel" tabindex="0">{{ trade_id }}</code></dd></div>
+      </dl>
+    </div>
+  </section>
+  {% endif %}
+  <nav class="more" aria-label="Other options">
+    <div class="more-links">
+      <a href="{{ retry_href }}">Choose another coin</a>
+      <a href="{{ payment_href }}">Pay directly</a>
+    </div>
+  </nav>
+</article>
+{% endblock %}

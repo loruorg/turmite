@@ -1,0 +1,48 @@
+---
+import Logo from './Logo.astro';
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="grid">
+      <div>
+        <a class="brand" href="/" aria-label="Turmite home"><Logo /></a>
+        <p class="lede">Self-hosted crypto payment gateway. Free and open source under the MIT license.</p>
+      </div>
+      <div>
+        <h2>Docs</h2>
+        <ul>
+          <li><a href="/docs/quick-start/">Quick start</a></li>
+          <li><a href="/docs/install/">Install</a></li>
+          <li><a href="/docs/merchant-api/">Merchant API</a></li>
+          <li><a href="/docs/webhooks/">Webhooks</a></li>
+          <li><a href="/docs/migrate/">Migrate</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Project</h2>
+        <ul>
+          <li><a href="https://github.com/loruorg/turmite">GitHub</a></li>
+          <li><a href="/blog/">Blog</a></li>
+          <li><a href="/docs/changelog/">Changelog</a></li>
+          <li><a href="/docs/contributing/">Contributing</a></li>
+          <li><a href="/rss.xml">RSS</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Security</h2>
+        <ul>
+          <li><a href="/docs/security-model/">Security model</a></li>
+          <li><a href="/docs/threat-model/">Threat model</a></li>
+          <li><a href="/docs/report-vulnerability/">Report a vulnerability</a></li>
+          <li><a href="/llms.txt">llms.txt</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="fine">
+      <span>MIT license. {year} Turmite contributors.</span>
+      <span>This site uses no cookies, analytics or trackers.</span>
+    </div>
+  </div>
+</footer>

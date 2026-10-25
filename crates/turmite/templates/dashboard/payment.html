@@ -1,0 +1,61 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<div class="crumbs"><a href="{{ shell.base }}/dashboard/p/{{ pid }}/payments">Payments</a> / {{ id }}</div>
+<header class="page-head">
+  <div><h1 class="mono-title">Payment {{ id }}</h1><p><span class="badge {{ status_class }}">{{ status_label }}</span></p></div>
+  <div class="actions"><a class="btn btn-2" href="{{ checkout_url }}" target="_blank" rel="noopener">Open checkout</a></div>
+</header>
+
+<section class="card">
+  <dl class="kv">
+    {% for (k, v) in fields %}<dt>{{ k }}</dt><dd>{% if *k == "Address" && !address_href.is_empty() %}<a class="mono" href="{{ address_href }}" target="_blank" rel="noopener">{{ v }}</a>{% else if *k == "Address" || *k == "Memo" %}<span class="mono">{{ v }}</span>{% else %}{{ v }}{% endif %}</dd>{% endfor %}
+  </dl>
+</section>
+
+<div class="section-title"><h2>Deposits</h2></div>
+<section class="card">
+  {% if txs.is_empty() %}<div class="empty"><h3>No deposit yet</h3><p>Deposits show here as soon as a node sees them.</p></div>{% else %}
+  <div class="table-wrap"><table><thead><tr><th>Transaction</th><th class="num">Amount</th><th class="num">Confirmations</th><th>Seen</th></tr></thead><tbody>
+  {% for t in txs %}<tr><td class="truncate mono">{% if t.href.is_empty() %}{{ t.txid }}{% else %}<a href="{{ t.href }}" target="_blank" rel="noopener">{{ t.txid }}</a>{% endif %}</td><td class="num mono">{{ t.amount }}</td><td class="num">{{ t.confirmations }}</td><td class="dim">{{ t.seen }}</td></tr>{% endfor %}
+  </tbody></table></div>{% endif %}
+</section>
+
+{% if !sweeps.is_empty() || !stuck.is_empty() %}
+<div class="section-title"><h2>Sweeps to your wallet</h2></div>
+{% if !stuck.is_empty() %}<p class="alert" role="alert" style="margin-bottom:12px">{{ stuck }}</p>{% endif %}
+{% if !sweeps.is_empty() %}
+<section class="card"><div class="table-wrap"><table><thead><tr><th>Transaction</th><th class="num">Amount</th><th>Status</th><th>Sent</th></tr></thead><tbody>
+{% for s in sweeps %}<tr><td class="truncate mono">{% if s.tx.href.is_empty() %}{{ s.tx.txid }}{% else %}<a href="{{ s.tx.href }}" target="_blank" rel="noopener">{{ s.tx.txid }}</a>{% endif %}</td><td class="num mono">{{ s.tx.amount }}</td><td>{{ s.status }}</td><td class="dim">{{ s.tx.seen }}</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endif %}
+{% endif %}
+
+{% if demo %}
+<div class="section-title"><h2>Simulate a deposit</h2></div>
+<form class="card card-pad row" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/payments/{{ id }}/simulate">
+  <div class="field"><label for="am">Amount</label><input id="am" class="mono" name="amount" value="{{ pay_amount }}" required></div>
+  <div class="field"><label for="cf">Confirmations</label><input id="cf" name="confirmations" type="number" min="0" value="0" required></div>
+  <button class="btn" type="submit">Send</button>
+</form>
+{% endif %}
+
+{% if can_act && (can_refund || (status != "finished" && status != "refunded")) %}
+<div class="section-title"><h2>Manual actions</h2></div>
+<section class="card card-pad">
+  {% if status != "finished" && status != "refunded" %}
+  <form class="row" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/payments/{{ id }}/mark-paid" data-confirm="Mark this payment as paid? Only do this after you checked the funds yourself.">
+    <div class="field"><label for="t1">Two-factor code</label><input id="t1" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+    <button class="btn btn-2" type="submit">Mark as paid</button>
+  </form>
+  <p class="hint" style="margin-top:8px">Sends the paid webhook. Use it when a customer paid in another way.</p>
+  {% endif %}
+  {% if can_refund %}
+  <form class="row"{% if status != "finished" %} style="margin-top:16px"{% endif %} method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/payments/{{ id }}/refunded" data-confirm="Mark this payment as refunded?">
+    <div class="field"><label for="t2">Two-factor code</label><input id="t2" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+    <button class="btn btn-danger" type="submit">Mark as refunded</button>
+  </form>
+  <p class="hint" style="margin-top:8px">Records a refund you sent and notifies your shop. It does not send funds.</p>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

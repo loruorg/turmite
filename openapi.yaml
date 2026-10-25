@@ -1,0 +1,1702 @@
+openapi: 3.1.0
+info:
+  title: Turmite merchant API
+  version: "1"
+  license:
+    name: MIT
+    identifier: MIT
+  description: |
+    The merchant API of a Turmite install. Your shop or backend calls it.
+
+    The base URL is the site URL of the install. The site URL can have a path, for example
+    `https://example.com/pay`. Then the API is at `https://example.com/pay/v1/...`.
+
+    Send the project API key in the `x-api-key` header. Keys start with `tm_`. The payout endpoints that move
+    funds also need a bearer token from `POST /v1/auth`.
+
+    Requests and responses are JSON. Request amounts can be a JSON number or a decimal string. Payment amounts
+    in responses are JSON numbers. A whole amount is an integer, such as `100`. Invoice and payout amounts in
+    responses are decimal strings.
+
+    `payment_id` is a string in the responses that create a payment. It is a number in the other responses
+    and in webhooks.
+
+    An error has a non-2xx status and a body with `status`, `statusCode`, `code` and `message`. Treat `code`
+    as an open set of values. Each endpoint can return `429` when one IP address sends too many requests.
+
+    The API keeps the paths, fields and IPN signature of the common hosted-gateway API shape. To move an
+    existing integration, change the base URL, the API key and, if necessary, the signature header name.
+servers:
+  - url: https://{host}{basePath}
+    description: Your Turmite install
+    variables:
+      host:
+        default: pay.example.com
+        description: The host of the site URL, or a checkout domain of the project.
+      basePath:
+        default: ""
+        description: The path of the site URL, such as `/pay`. Empty when Turmite has the whole host.
+security:
+  - apiKey: []
+tags:
+  - name: Payments
+    description: Create payments and read their status.
+  - name: Invoices
+    description: Hosted invoices. The customer selects the coin on the invoice page.
+  - name: Payouts
+    description: Send funds from the project's hot wallets.
+  - name: Reference
+    description: Currencies, minimum amounts, estimates and balances.
+  - name: Auth
+    description: Bearer tokens for the payout endpoints.
+
+paths:
+  /v1/status:
+    get:
+      tags: [Reference]
+      operationId: getStatus
+      summary: Check that the API is up
+      security: []
+      responses:
+        "200":
+          description: The API is up.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message]
+                properties:
+                  message:
+                    type: string
+                    const: OK
+              example: { message: OK }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /v1/currencies:
+    get:
+      tags: [Reference]
+      operationId: getCurrencies
+      summary: List enabled tickers
+      description: With a key, the tickers enabled for the key's project. Without a key, the tickers that at least one project takes.
+      security:
+        - apiKey: []
+        - {}
+      responses:
+        "200":
+          description: Enabled tickers.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [currencies]
+                properties:
+                  currencies:
+                    type: array
+                    items: { type: string }
+              example: { currencies: [btc, eth, usdttrc20, sol] }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /v1/full-currencies:
+    get:
+      tags: [Reference]
+      operationId: getFullCurrencies
+      summary: List currencies with details
+      description: One entry for each ticker that the server has turned on. `enable` tells if the project takes it.
+      security:
+        - apiKey: []
+        - {}
+      responses:
+        "200":
+          description: One entry per ticker.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [currencies]
+                properties:
+                  currencies:
+                    type: array
+                    items: { $ref: "#/components/schemas/FullCurrency" }
+              example:
+                currencies:
+                  - id: 7
+                    code: USDTTRC20
+                    name: Tether USD
+                    enable: true
+                    wallet_regex: null
+                    priority: 7
+                    extra_id_exists: false
+                    extra_id_regex: null
+                    logo_url: null
+                    track: false
+                    cg_id: tether
+                    is_maxlimit: false
+                    network: tron
+                    smart_contract: TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+                    network_precision: "6"
+                    ticker: usdttrc20
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /v1/merchant/coins:
+    get:
+      tags: [Reference]
+      operationId: getMerchantCoins
+      summary: List the tickers enabled for the project
+      responses:
+        "200":
+          description: Tickers enabled for the key's project.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [selectedCurrencies]
+                properties:
+                  selectedCurrencies:
+                    type: array
+                    items: { type: string }
+              example: { selectedCurrencies: [btc, usdttrc20] }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /v1/min-amount:
+    get:
+      tags: [Reference]
+      operationId: getMinAmount
+      summary: Get the minimum payment amount
+      description: No API key is necessary. Turmite ignores a key that you send.
+      security: []
+      parameters:
+        - name: currency_from
+          in: query
+          required: true
+          description: The ticker the customer pays with.
+          schema: { type: string }
+          example: btc
+        - name: currency_to
+          in: query
+          required: false
+          description: Turmite does not convert. It copies this value to the response. The default is `currency_from`.
+          schema: { type: string }
+          example: btc
+        - name: fiat_equivalent
+          in: query
+          required: false
+          description: A fiat code. When set and a rate is available, the response has `fiat_equivalent`.
+          schema: { type: string }
+          example: usd
+      responses:
+        "200":
+          description: The minimum payment amount in `currency_from`.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MinAmountResponse" }
+              example:
+                currency_from: btc
+                currency_to: btc
+                min_amount: 0.00001
+                fiat_equivalent: 1.07
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /v1/estimate:
+    get:
+      tags: [Reference]
+      operationId: getEstimate
+      summary: Estimate a price in a coin
+      description: No API key is necessary. Turmite ignores a key that you send.
+      security: []
+      parameters:
+        - name: amount
+          in: query
+          required: true
+          description: The amount in `currency_from`.
+          schema: { type: string, pattern: '^[0-9]+(\.[0-9]+)?$' }
+          example: "100"
+        - name: currency_from
+          in: query
+          required: true
+          description: The price currency, such as `usd`.
+          schema: { type: string }
+          example: usd
+        - name: currency_to
+          in: query
+          required: true
+          description: The ticker the customer pays with.
+          schema: { type: string }
+          example: btc
+      responses:
+        "200":
+          description: The estimate at the current rate.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EstimateResponse" }
+              example:
+                currency_from: usd
+                amount_from: 100
+                currency_to: btc
+                estimated_amount: "0.00107"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+        "503": { $ref: "#/components/responses/Unavailable" }
+
+  /v1/payment:
+    post:
+      tags: [Payments]
+      operationId: createPayment
+      summary: Create a payment
+      description: |
+        Reserves a deposit address and fixes the amount to pay in `pay_currency`. Send the customer to your own
+        page with `pay_address` and `pay_amount`, or use an invoice for the hosted checkout. A retry with the same
+        `idempotency_key` returns the first payment. In this response `payment_id` and `purchase_id` are strings.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: The same as `idempotency_key` in the body. The body field has priority.
+          schema: { type: string, maxLength: 255 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreatePaymentRequest" }
+            example:
+              price_amount: 100
+              price_currency: usd
+              pay_currency: btc
+              order_id: "1042"
+              order_description: "Order #1042"
+              ipn_callback_url: https://shop.example.com/turmite/ipn
+              idempotency_key: order-1042
+      responses:
+        "201":
+          description: The new payment.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CreatedPayment" }
+              examples:
+                payment: { $ref: "#/components/examples/CreatedPayment" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+        "503": { $ref: "#/components/responses/Unavailable" }
+    get:
+      tags: [Payments]
+      operationId: listPayments
+      summary: List payments
+      parameters:
+        - name: limit
+          in: query
+          description: Payments per page. Turmite changes a value below 1 to 1 and a value above 500 to 500.
+          schema: { type: integer, minimum: 1, maximum: 500, default: 10 }
+        - name: page
+          in: query
+          description: Page number. The first page is 0.
+          schema: { type: integer, minimum: 0, default: 0 }
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            default: created_at
+            enum:
+              - payment_id
+              - payment_status
+              - pay_address
+              - price_amount
+              - price_currency
+              - pay_amount
+              - actually_paid
+              - pay_currency
+              - order_id
+              - order_description
+              - purchase_id
+              - outcome_amount
+              - outcome_currency
+              - created_at
+              - updated_at
+        - name: orderBy
+          in: query
+          schema: { type: string, enum: [asc, desc], default: desc }
+        - name: dateFrom
+          in: query
+          description: Earliest `created_at`. A date or a date-time.
+          schema: { type: string }
+          example: "2026-10-01"
+        - name: dateTo
+          in: query
+          description: Latest `created_at`. A date or a date-time.
+          schema: { type: string }
+          example: "2026-10-31T23:59:59Z"
+        - name: invoiceId
+          in: query
+          description: Only the payments of this invoice.
+          schema: { type: integer, format: int64 }
+          example: 4522625843
+        - name: payment_status
+          in: query
+          description: Only the payments with this status.
+          schema: { $ref: "#/components/schemas/PaymentStatus" }
+        - name: order_id
+          in: query
+          description: Only the payments with this `order_id`.
+          schema: { type: string }
+      responses:
+        "200":
+          description: One page of payments.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PaymentList" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /v1/payment/{payment_id}:
+    get:
+      tags: [Payments]
+      operationId: getPayment
+      summary: Get a payment
+      description: Ship the order only when `payment_status` is `finished`. Use webhooks instead of frequent polls.
+      parameters:
+        - name: payment_id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+          example: 5077125051
+      responses:
+        "200":
+          description: The payment.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Payment" }
+              examples:
+                payment: { $ref: "#/components/examples/Payment" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /v1/invoice:
+    post:
+      tags: [Invoices]
+      operationId: createInvoice
+      summary: Create an invoice
+      description: |
+        Returns `invoice_url`, a hosted checkout page. Send the customer there. The customer selects a coin, and
+        Turmite creates a payment for the invoice. The payment copies `order_id`, `order_description`,
+        `ipn_callback_url`, `success_url` and `cancel_url` from the invoice. Webhooks for that payment go to the
+        invoice's `ipn_callback_url`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateInvoiceRequest" }
+            example:
+              price_amount: 49.9
+              price_currency: eur
+              order_id: "1042"
+              order_description: "Order #1042"
+              ipn_callback_url: https://shop.example.com/turmite/ipn
+              success_url: https://shop.example.com/checkout/order-received/1042
+              cancel_url: https://shop.example.com/checkout
+      responses:
+        "201":
+          description: The new invoice.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Invoice" }
+              example:
+                id: "4522625843"
+                token_id: k3J9xQ2vT8mZ5wR1nB7cY4pL
+                order_id: "1042"
+                order_description: "Order #1042"
+                price_amount: "49.9"
+                price_currency: eur
+                pay_currency: null
+                ipn_callback_url: https://shop.example.com/turmite/ipn
+                invoice_url: https://pay.example.com/i/k3J9xQ2vT8mZ5wR1nB7cY4pL
+                success_url: https://shop.example.com/checkout/order-received/1042
+                cancel_url: https://shop.example.com/checkout
+                created_at: "2026-10-23T12:00:00.000Z"
+                updated_at: "2026-10-23T12:00:00.000Z"
+                expiration_estimate_date: "2026-10-23T13:00:00.000Z"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /v1/invoice-payment:
+    post:
+      tags: [Invoices]
+      operationId: createInvoicePayment
+      summary: Create a payment for an invoice
+      description: |
+        Use this to build your own coin selection for an invoice. The payment gets the invoice's price, order and
+        URLs. If the invoice has an open payment in `pay_currency`, Turmite returns that payment. In this response
+        `payment_id` and `purchase_id` are strings.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateInvoicePaymentRequest" }
+            example:
+              iid: "4522625843"
+              pay_currency: usdttrc20
+      responses:
+        "201":
+          description: The new payment.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CreatedPayment" }
+              examples:
+                payment: { $ref: "#/components/examples/CreatedPayment" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+        "503": { $ref: "#/components/responses/Unavailable" }
+
+  /v1/balance:
+    get:
+      tags: [Reference]
+      operationId: getBalance
+      summary: Get the project balance per ticker
+      responses:
+        "200":
+          description: One entry per ticker.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Balance" }
+              example:
+                btc: { amount: 0.0153, pendingAmount: 0.0012 }
+                usdttrc20: { amount: 1250.5, pendingAmount: 0 }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /v1/auth:
+    post:
+      tags: [Auth]
+      operationId: auth
+      summary: Get a bearer token for the payout endpoints
+      description: Use the email and password of a dashboard user. The token is valid for 5 minutes.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AuthRequest" }
+            example: { email: ops@shop.example.com, password: correct-horse-battery-staple }
+      responses:
+        "200":
+          description: The token.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+              example: { token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /v1/payout:
+    post:
+      tags: [Payouts]
+      operationId: createPayout
+      summary: Create a payout batch
+      description: |
+        Creates one payout per withdrawal. The bearer token must belong to a project admin of the API key's
+        project. Each address must be in the project's address book. New payouts are `pending-otp-verification`
+        until you verify the batch with `POST /v1/payout/{batch_id}/verify`. A withdrawal with a
+        `unique_external_id` that already exists returns the existing payout. The same id with other fields
+        returns `409`. At most 100 withdrawals per batch. Bitcoin and Monero have no payouts.
+      security:
+        - apiKey: []
+          bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreatePayoutRequest" }
+            example:
+              withdrawals:
+                - address: TQrZ9wBzhXnHdAdKwRBfdMH2RiTjH6yGtW
+                  currency: usdttrc20
+                  amount: "250.00"
+                  ipn_callback_url: https://shop.example.com/turmite/payout-ipn
+                  unique_external_id: refund-1042
+      responses:
+        "201":
+          description: The new batch.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PayoutBatch" }
+              examples:
+                payoutBatch: { $ref: "#/components/examples/PayoutBatch" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+    get:
+      tags: [Payouts]
+      operationId: listPayouts
+      summary: List payouts
+      security:
+        - apiKey: []
+          bearerAuth: []
+      parameters:
+        - name: batch_id
+          in: query
+          description: Only the payouts of this batch.
+          schema: { type: string, pattern: "^[0-9]+$" }
+        - name: status
+          in: query
+          description: Only the payouts with this status. An unknown status returns `400`.
+          schema: { $ref: "#/components/schemas/PayoutStatus" }
+        - name: date_from
+          in: query
+          description: Earliest `created_at`. A date or a date-time.
+          schema: { type: string }
+        - name: date_to
+          in: query
+          description: Latest `created_at`. A date or a date-time.
+          schema: { type: string }
+        - name: order
+          in: query
+          schema: { type: string, enum: [asc, desc], default: desc }
+        - name: limit
+          in: query
+          description: Payouts per page. Turmite changes a value below 1 to 1 and a value above 500 to 500.
+          schema: { type: integer, minimum: 1, maximum: 500, default: 10 }
+        - name: page
+          in: query
+          description: Page number. The first page is 0.
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        "200":
+          description: One page of payouts.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PayoutList" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /v1/payout/{batch_id}/verify:
+    post:
+      tags: [Payouts]
+      operationId: verifyPayout
+      summary: Verify a payout batch
+      description: |
+        Send the current TOTP code of the user who got the bearer token. That user must be a project admin. Each
+        payout of the batch that waits for verification then goes through the project limits: within them it is
+        `pending`; above the auto-approve amount or the hourly or daily limit it is `pending-approval` until an
+        admin approves it in the dashboard. A wrong code returns `400`. After 5 wrong codes the user is locked for
+        15 minutes and gets `429`. A user without two-factor authentication gets `403`.
+      security:
+        - apiKey: []
+          bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BatchId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VerifyPayoutRequest" }
+            example: { verification_code: "123456" }
+      responses:
+        "200":
+          description: The batch after verification.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PayoutBatch" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /v1/payout/{batch_id}:
+    get:
+      tags: [Payouts]
+      operationId: getPayout
+      summary: Get a payout batch
+      parameters:
+        - $ref: "#/components/parameters/BatchId"
+      responses:
+        "200":
+          description: The batch.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PayoutBatch" }
+              examples:
+                payoutBatch: { $ref: "#/components/examples/PayoutBatch" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /v1/payout/validate-address:
+    post:
+      tags: [Payouts]
+      operationId: validateAddress
+      summary: Validate a payout address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ValidateAddressRequest" }
+            example: { address: TQrZ9wBzhXnHdAdKwRBfdMH2RiTjH6yGtW, currency: usdttrc20 }
+      responses:
+        "200":
+          description: The address is valid. The body is the JSON string `"OK"`. An invalid address or an unknown currency returns `400`.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ValidateAddressResponse" }
+              example: OK
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /v1/payout/fee:
+    get:
+      tags: [Payouts]
+      operationId: getPayoutFee
+      summary: Estimate the network fee of a payout
+      description: |
+        The fee is an estimate from the chain. Turmite measures the real fee when it sends the payout. The hot
+        wallet pays the fee in the native coin of the network (`network_fee` in `fee_currency`); the recipient gets
+        the full amount. `fee` is that cost in `currency`. A Solana token payout to a wallet without a token
+        account also pays the rent of that account.
+      parameters:
+        - name: currency
+          in: query
+          required: true
+          schema: { type: string }
+          example: usdttrc20
+        - name: amount
+          in: query
+          required: false
+          schema: { type: string, pattern: '^[0-9]+(\.[0-9]+)?$' }
+          example: "250"
+      responses:
+        "200":
+          description: The estimated fee in `currency`.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PayoutFee" }
+              example: { currency: usdttrc20, amount: "250", fee: 1.1, network_fee: 4.4, fee_currency: trx }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+        "503": { $ref: "#/components/responses/Unavailable" }
+
+webhooks:
+  payment:
+    post:
+      operationId: paymentWebhook
+      summary: A payment changed
+      description: |
+        Turmite sends the payment object to the `ipn_callback_url` of the payment, or of its invoice. It sends
+        one on each status change, one for each new confirmation count while the payment is `confirming`, and one
+        on each extra credit after `finished`. Ship the order only on `finished`. In this body `payment_id` is a
+        number and `purchase_id` is a string.
+
+        Check the signature before you use the body. The signature header (default `x-turmite-sig`) holds the hex
+        HMAC-SHA512 of the key-sorted JSON body. The key is the project IPN secret. To get the key-sorted JSON from
+        the raw body:
+
+        1. Sort the members of each object by key. Compare keys as UTF-8 bytes. Keep the order of arrays.
+        2. Write compact JSON with no whitespace.
+        3. Copy each number exactly as it is in the raw body, for example `0.5` or `1e-6`.
+        4. In strings, escape only `"`, `\` and control characters. Do not escape `/` or non-ASCII characters.
+
+        `x-turmite-signature` holds `v1=` and the hex HMAC-SHA256 of `<x-turmite-timestamp>.<raw body>`, with the
+        same secret. Refuse a timestamp more than 5 minutes from your clock. Use `x-turmite-delivery` to ignore a
+        delivery that you already processed.
+
+        A 2xx response acknowledges the delivery. Progress events get 3 attempts: now, after 10 s and after 60 s.
+        Final events get attempts now and after 10 s, 1 m, 5 m, 30 m, 1 h, 2 h, 4 h, 8 h, 24 h and 48 h. Then the
+        delivery is dead. You can retry it from the dashboard.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/SignatureHeader"
+        - $ref: "#/components/parameters/TimestampHeader"
+        - $ref: "#/components/parameters/SignatureV1Header"
+        - $ref: "#/components/parameters/EventHeader"
+        - $ref: "#/components/parameters/DeliveryHeader"
+        - $ref: "#/components/parameters/UserAgentHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PaymentWebhook" }
+            examples:
+              payment: { $ref: "#/components/examples/PaymentWebhook" }
+      responses:
+        "200":
+          description: Any 2xx status acknowledges the delivery.
+        "400":
+          description: Any other status makes Turmite retry on the schedule.
+
+  payout:
+    post:
+      operationId: payoutWebhook
+      summary: A payout changed
+      description: |
+        Turmite sends the payout object to the `ipn_callback_url` of the withdrawal (or of its batch) on each status
+        change, with the event `payout.<status>` in `x-turmite-event`. The key is the project IPN secret. The headers,
+        signatures and retries are the same as for the payment webhook. `sent`, `failed`, `rejected` and `cancelled`
+        are final events.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/SignatureHeader"
+        - $ref: "#/components/parameters/TimestampHeader"
+        - $ref: "#/components/parameters/SignatureV1Header"
+        - $ref: "#/components/parameters/EventHeader"
+        - $ref: "#/components/parameters/DeliveryHeader"
+        - $ref: "#/components/parameters/UserAgentHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Payout" }
+            examples:
+              payout: { $ref: "#/components/examples/Payout" }
+      responses:
+        "200":
+          description: Any 2xx status acknowledges the delivery.
+        "400":
+          description: Any other status makes Turmite retry on the schedule.
+
+  event:
+    post:
+      operationId: endpointWebhook
+      summary: An event for a project endpoint
+      description: |
+        Turmite sends this envelope to each endpoint that you add under Webhooks in the dashboard. `event` is
+        `payment.<status>` with a payment in `data`, `payout.<status>` with a payout in `data`, or `test` with a
+        message in `data`.
+
+        Each endpoint has its own secret. The dashboard shows it. Turmite signs both signature headers with it.
+        The headers, the signature rules and the retries are the same as for the payment webhook.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/SignatureHeader"
+        - $ref: "#/components/parameters/TimestampHeader"
+        - $ref: "#/components/parameters/SignatureV1Header"
+        - $ref: "#/components/parameters/EventHeader"
+        - $ref: "#/components/parameters/DeliveryHeader"
+        - $ref: "#/components/parameters/UserAgentHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WebhookEnvelope" }
+            examples:
+              paymentFinished: { $ref: "#/components/examples/EventPaymentFinished" }
+              test: { $ref: "#/components/examples/EventTest" }
+      responses:
+        "200":
+          description: Any 2xx status acknowledges the delivery.
+        "400":
+          description: Any other status makes Turmite retry on the schedule.
+
+components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: A project API key. Create it under API keys in the dashboard. Keys start with `tm_`.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: A token from `POST /v1/auth`. It is valid for 5 minutes.
+
+  parameters:
+    BatchId:
+      name: batch_id
+      in: path
+      required: true
+      description: The `id` of the payout batch.
+      schema: { type: string }
+      example: "5000000713"
+    SignatureHeader:
+      name: x-turmite-sig
+      in: header
+      required: true
+      description: |
+        Hex HMAC-SHA512 of the key-sorted JSON body. The key is the project IPN secret for an `ipn_callback_url`,
+        or the endpoint secret for a project endpoint. The header name is a project setting. The default is `x-turmite-sig`.
+      schema: { type: string, pattern: "^[0-9a-f]{128}$" }
+    TimestampHeader:
+      name: x-turmite-timestamp
+      in: header
+      required: true
+      description: Unix time in seconds when Turmite signed this attempt.
+      schema: { type: string, pattern: "^[0-9]+$" }
+      example: "1761220800"
+    SignatureV1Header:
+      name: x-turmite-signature
+      in: header
+      required: true
+      description: "`v1=` and the hex HMAC-SHA256 of `<x-turmite-timestamp>.<raw body>`. The key is the same as for the signature header."
+      schema: { type: string, pattern: "^v1=[0-9a-f]{64}$" }
+    EventHeader:
+      name: x-turmite-event
+      in: header
+      required: true
+      description: The event name, such as `payment.finished`, `payout.sent` or `test`.
+      schema: { type: string }
+      example: payment.finished
+    DeliveryHeader:
+      name: x-turmite-delivery
+      in: header
+      required: true
+      description: The delivery id. Retries of a delivery use the same id. Use it to ignore duplicates.
+      schema: { type: string }
+      example: dK4rT8wQ2mN6xP1vB9cL5zH7
+    UserAgentHeader:
+      name: user-agent
+      in: header
+      required: true
+      schema: { type: string, const: turmite-webhook/1 }
+
+  responses:
+    BadRequest:
+      description: The request is not valid.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { status: false, statusCode: 400, code: INVALID_REQUEST_PARAMS, message: "`price_amount` must be greater than 0." }
+    Unauthorized:
+      description: The API key or the bearer token is missing or not valid.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { status: false, statusCode: 401, code: AUTH_REQUIRED, message: Invalid API key. }
+    Forbidden:
+      description: The key or the user cannot do this action.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { status: false, statusCode: 403, code: FORBIDDEN, message: Only a project admin can create or verify payouts. }
+    NotFound:
+      description: Not found, or it belongs to another project.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { status: false, statusCode: 404, code: NOT_FOUND, message: not found }
+    Conflict:
+      description: The request conflicts with an existing object.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { status: false, statusCode: 409, code: CONFLICT, message: "`unique_external_id` is used with other fields." }
+    RateLimited:
+      description: Too many requests.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { status: false, statusCode: 429, code: TOO_MANY_REQUESTS, message: "too many requests, try again later" }
+    InternalError:
+      description: The server failed. The message has no details.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { status: false, statusCode: 500, code: INTERNAL_ERROR, message: Internal error. }
+    Unavailable:
+      description: A service that the request needs is not available, for example the exchange rates. Try again later.
+      headers:
+        Retry-After:
+          description: Seconds to wait before you try again. Not every `503` has it.
+          schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { status: false, statusCode: 503, code: UNAVAILABLE, message: Exchange rates are not available. Try again in a minute. }
+
+  examples:
+    CreatedPayment:
+      summary: A new payment
+      value:
+        payment_id: "5077125051"
+        invoice_id: null
+        payment_status: waiting
+        pay_address: bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
+        payin_extra_id: null
+        price_amount: 100
+        price_currency: usd
+        pay_amount: 0.00123
+        actually_paid: 0
+        pay_currency: btc
+        order_id: "1042"
+        order_description: "Order #1042"
+        purchase_id: "6084815412"
+        outcome_amount: null
+        outcome_currency: btc
+        network: btc
+        network_precision: 8
+        smart_contract: null
+        payin_hash: null
+        payout_hash: null
+        payment_url: https://pay.example.com/pay/Q7mX2pK9vT4nB8cR1sW6yZ3h
+        created_at: "2026-10-23T12:00:00.000Z"
+        updated_at: "2026-10-23T12:00:00.000Z"
+        expiration_estimate_date: "2026-10-23T12:15:00.000Z"
+        parent_payment_id: null
+        type: crypto2crypto
+        time_limit: null
+        burning_percent: null
+        payment_extra_ids: null
+        amount_received: 0.00123
+        actually_paid_at_fiat: 0
+        fee: { currency: btc, depositFee: 0, withdrawalFee: 0, serviceFee: 0 }
+    Payment:
+      summary: A finished payment
+      value:
+        payment_id: 5077125051
+        invoice_id: 4522625843
+        payment_status: finished
+        pay_address: bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
+        payin_extra_id: null
+        price_amount: 100
+        price_currency: usd
+        pay_amount: 0.00123
+        actually_paid: 0.00123
+        pay_currency: btc
+        order_id: "1042"
+        order_description: "Order #1042"
+        purchase_id: 6084815412
+        outcome_amount: 0.00123
+        outcome_currency: btc
+        network: btc
+        network_precision: 8
+        smart_contract: null
+        payin_hash: 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+        payout_hash: null
+        payment_url: https://pay.example.com/pay/Q7mX2pK9vT4nB8cR1sW6yZ3h
+        created_at: "2026-10-23T12:00:00.000Z"
+        updated_at: "2026-10-23T12:14:03.512Z"
+        expiration_estimate_date: "2026-10-23T12:15:00.000Z"
+        parent_payment_id: null
+        type: crypto2crypto
+        time_limit: null
+        burning_percent: null
+        payment_extra_ids: null
+        amount_received: 0.00123
+        actually_paid_at_fiat: 100
+        fee: { currency: btc, depositFee: 0, withdrawalFee: 0, serviceFee: 0 }
+    PaymentWebhook:
+      summary: A finished payment
+      value:
+        payment_id: 5077125051
+        invoice_id: 4522625843
+        payment_status: finished
+        pay_address: bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
+        payin_extra_id: null
+        price_amount: 100
+        price_currency: usd
+        pay_amount: 0.00123
+        actually_paid: 0.00123
+        pay_currency: btc
+        order_id: "1042"
+        order_description: "Order #1042"
+        purchase_id: "6084815412"
+        outcome_amount: 0.00123
+        outcome_currency: btc
+        network: btc
+        network_precision: 8
+        smart_contract: null
+        payin_hash: 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+        payout_hash: null
+        payment_url: https://pay.example.com/pay/Q7mX2pK9vT4nB8cR1sW6yZ3h
+        created_at: "2026-10-23T12:00:00.000Z"
+        updated_at: "2026-10-23T12:14:03.512Z"
+        expiration_estimate_date: "2026-10-23T12:15:00.000Z"
+        parent_payment_id: null
+        type: crypto2crypto
+        time_limit: null
+        burning_percent: null
+        payment_extra_ids: null
+        amount_received: 0.00123
+        actually_paid_at_fiat: 100
+        fee: { currency: btc, depositFee: 0, withdrawalFee: 0, serviceFee: 0 }
+    EventPaymentFinished:
+      summary: A payment event
+      value:
+        event: payment.finished
+        delivery_id: dK4rT8wQ2mN6xP1vB9cL5zH7
+        created_at: 1761221644
+        data:
+          payment_id: 5077125051
+          invoice_id: 4522625843
+          payment_status: finished
+          pay_address: bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
+          payin_extra_id: null
+          price_amount: 100
+          price_currency: usd
+          pay_amount: 0.00123
+          actually_paid: 0.00123
+          pay_currency: btc
+          order_id: "1042"
+          order_description: "Order #1042"
+          purchase_id: "6084815412"
+          outcome_amount: 0.00123
+          outcome_currency: btc
+          network: btc
+          network_precision: 8
+          smart_contract: null
+          payin_hash: 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+          payout_hash: null
+          payment_url: https://pay.example.com/pay/Q7mX2pK9vT4nB8cR1sW6yZ3h
+          created_at: "2026-10-23T12:00:00.000Z"
+          updated_at: "2026-10-23T12:14:03.512Z"
+          expiration_estimate_date: "2026-10-23T12:15:00.000Z"
+          parent_payment_id: null
+          type: crypto2crypto
+          time_limit: null
+          burning_percent: null
+          payment_extra_ids: null
+          amount_received: 0.00123
+          actually_paid_at_fiat: 100
+          fee: { currency: btc, depositFee: 0, withdrawalFee: 0, serviceFee: 0 }
+    EventTest:
+      summary: A test event
+      value:
+        event: test
+        delivery_id: Hc2W9pLx4ZqT7mVb1NkR8sYd
+        created_at: 1761221700
+        data:
+          message: Test event from Turmite.
+    Payout:
+      summary: A sent payout
+      value:
+        id: "5000248325"
+        batch_withdrawal_id: "5000000713"
+        address: TQrZ9wBzhXnHdAdKwRBfdMH2RiTjH6yGtW
+        extra_id: null
+        currency: usdttrc20
+        network: tron
+        amount: "250"
+        fee: "4.4"
+        fee_currency: trx
+        status: sent
+        hash: 9f4c0e5b2a7d1c3e8f6a0b4d2c9e7f1a3b5d8c0e2f4a6b8d0c2e4f6a8b0d2c4e
+        error: null
+        ipn_callback_url: https://shop.example.com/turmite/payout-ipn
+        payout_description: Refund for order 1042
+        unique_external_id: refund-1042
+        created_at: "2026-10-23T13:00:00.000Z"
+        requested_at: "2026-10-23T13:01:10.000Z"
+        updated_at: "2026-10-23T13:02:45.000Z"
+    PayoutBatch:
+      summary: A new batch
+      value:
+        id: "5000000713"
+        withdrawals:
+          - id: "5000248325"
+            batch_withdrawal_id: "5000000713"
+            address: TQrZ9wBzhXnHdAdKwRBfdMH2RiTjH6yGtW
+            extra_id: null
+            currency: usdttrc20
+            network: tron
+            amount: "250"
+            fee: null
+            fee_currency: trx
+            status: pending-otp-verification
+            hash: null
+            error: null
+            ipn_callback_url: https://shop.example.com/turmite/payout-ipn
+            payout_description: null
+            unique_external_id: refund-1042
+            created_at: "2026-10-23T13:00:00.000Z"
+            requested_at: null
+            updated_at: "2026-10-23T13:00:00.000Z"
+
+  schemas:
+    Error:
+      type: object
+      required: [status, statusCode, code, message]
+      properties:
+        status:
+          type: boolean
+          const: false
+        statusCode:
+          type: integer
+          description: The HTTP status.
+        code:
+          type: string
+          examples: [INVALID_REQUEST_PARAMS, AUTH_REQUIRED, NOT_FOUND]
+          description: |
+            A stable error code. Known values: `INVALID_REQUEST_PARAMS` (400), `AUTH_REQUIRED` (401), `FORBIDDEN`
+            (403), `NOT_FOUND` (404), `METHOD_NOT_ALLOWED` (405), `CONFLICT` (409), `TOO_MANY_REQUESTS` (429),
+            `INTERNAL_ERROR` (500) and `UNAVAILABLE` (503). More values can come in later versions.
+        message:
+          type: string
+      example: { status: false, statusCode: 400, code: INVALID_REQUEST_PARAMS, message: "Currency `xmr` is not enabled for this project. Add a Monero wallet in the dashboard." }
+
+    Amount:
+      description: A positive amount, as a JSON number or a decimal string.
+      oneOf:
+        - type: number
+          exclusiveMinimum: 0
+        - type: string
+          pattern: '^[0-9]+(\.[0-9]+)?$'
+      examples: [100, "0.00123"]
+
+    DecimalString:
+      type: string
+      description: A decimal number as text.
+      pattern: '^-?[0-9]+(\.[0-9]+)?$'
+      examples: ["250", "0.00123"]
+
+    PaymentStatus:
+      type: string
+      enum: [waiting, confirming, confirmed, sending, partially_paid, finished, failed, refunded, expired]
+      description: |
+        `waiting`: no deposit yet. `confirming`: a deposit is on the chain with too few confirmations.
+        `confirmed`: the deposit has enough confirmations. `sending`: Turmite moves the funds to the wallet of the
+        project. `partially_paid`: the customer sent less than `pay_amount`. `finished`: paid in full. Ship the
+        order now. `failed`, `refunded` and `expired` are final.
+
+    PaymentFields:
+      type: object
+      description: |
+        The fields that all payment objects share. Amounts are JSON numbers. A whole amount is an integer, such
+        as `100`. In API responses a very small amount can have an exponent, such as `1e-6`. Webhook bodies write
+        numbers as JavaScript does: `0.000001`, with an exponent only below 1e-7 (`1e-7`). Keep the raw body to
+        check the signature.
+      required:
+        - invoice_id
+        - payment_status
+        - pay_address
+        - payin_extra_id
+        - price_amount
+        - price_currency
+        - pay_amount
+        - actually_paid
+        - pay_currency
+        - order_id
+        - order_description
+        - outcome_amount
+        - outcome_currency
+        - network
+        - network_precision
+        - smart_contract
+        - payin_hash
+        - payout_hash
+        - payment_url
+        - created_at
+        - updated_at
+        - expiration_estimate_date
+        - parent_payment_id
+        - type
+        - time_limit
+        - burning_percent
+        - payment_extra_ids
+        - amount_received
+        - actually_paid_at_fiat
+        - fee
+      properties:
+        invoice_id: { type: [integer, "null"], format: int64 }
+        payment_status: { $ref: "#/components/schemas/PaymentStatus" }
+        pay_address: { type: string, description: The deposit address. }
+        payin_extra_id:
+          type: [string, "null"]
+          description: The memo or tag the customer must add, on networks that use one.
+        price_amount: { type: number, description: The price in `price_currency`. }
+        price_currency: { type: string, description: Lowercase., examples: [usd] }
+        pay_amount: { type: number, description: The amount to pay in `pay_currency`. }
+        actually_paid: { type: number, description: The amount received so far. }
+        pay_currency: { type: string, examples: [btc] }
+        order_id: { type: [string, "null"] }
+        order_description: { type: [string, "null"] }
+        outcome_amount:
+          type: [number, "null"]
+          description: The amount credited to the project after network fees.
+        outcome_currency: { type: string }
+        network:
+          type: string
+          description: The network code. One of `btc`, `xmr`, `eth`, `base`, `polygon`, `bsc`, `tron`, `sol`, `ton`.
+          examples: [btc]
+        network_precision: { type: integer, description: The decimals of `pay_currency`. }
+        smart_contract: { type: [string, "null"], description: The token contract. Null for a native coin. }
+        payin_hash: { type: [string, "null"], description: The transaction hash of the latest deposit. }
+        payout_hash:
+          type: [string, "null"]
+          description: The transaction hash of the latest transfer from the deposit address to the project wallet.
+        payment_url:
+          type: string
+          format: uri
+          description: The hosted payment page, `<site URL>/pay/<token>`. The token is random.
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        expiration_estimate_date:
+          type: string
+          format: date-time
+          description: When the payment expires if no deposit comes.
+        parent_payment_id: { type: "null", description: Always null. }
+        type: { type: string, enum: [crypto2crypto], description: Always `crypto2crypto`. }
+        time_limit: { type: "null", description: Always null. }
+        burning_percent: { type: "null", description: Always null. }
+        payment_extra_ids: { type: "null", description: Always null. }
+        amount_received:
+          type: number
+          description: The amount the project gets in `outcome_currency`. `outcome_amount` once funds are credited, else `pay_amount`.
+        actually_paid_at_fiat:
+          type: number
+          description: |
+            `actually_paid` in `price_currency`, at the rate of the payment. A payment with a fixed `pay_amount`
+            uses `price_amount / pay_amount` as the rate.
+        fee:
+          type: object
+          description: Turmite takes no fee. `withdrawalFee` is the network fee of the sweeps to the project wallet.
+          required: [currency, depositFee, withdrawalFee, serviceFee]
+          properties:
+            currency: { type: string, description: The same as `pay_currency`., examples: [btc] }
+            depositFee: { type: number, description: Always 0. }
+            withdrawalFee: { type: number }
+            serviceFee: { type: number, description: Always 0. }
+
+    Payment:
+      description: A payment as `GET /v1/payment/{payment_id}` and `GET /v1/payment` return it.
+      allOf:
+        - $ref: "#/components/schemas/PaymentFields"
+        - type: object
+          required: [payment_id, purchase_id]
+          properties:
+            payment_id: { type: integer, format: int64 }
+            purchase_id:
+              type: [integer, string]
+              description: |
+                The `purchase_id` of the request, or numeric text that Turmite makes. A plain decimal integer up
+                to 2^53 - 1 is a JSON number. Other values are strings.
+              examples: [6084815412]
+
+    CreatedPayment:
+      description: A payment as `POST /v1/payment` and `POST /v1/invoice-payment` return it.
+      allOf:
+        - $ref: "#/components/schemas/PaymentFields"
+        - type: object
+          required: [payment_id, purchase_id]
+          properties:
+            payment_id:
+              type: string
+              pattern: "^[0-9]+$"
+              description: The payment id as numeric text.
+              examples: ["5077125051"]
+            purchase_id:
+              type: string
+              description: The `purchase_id` of the request, or numeric text that Turmite makes.
+              examples: ["6084815412"]
+
+    PaymentWebhook:
+      description: A payment as webhooks send it.
+      allOf:
+        - $ref: "#/components/schemas/PaymentFields"
+        - type: object
+          required: [payment_id, purchase_id]
+          properties:
+            payment_id: { type: integer, format: int64 }
+            purchase_id:
+              type: string
+              description: The `purchase_id` of the request, or numeric text that Turmite makes.
+              examples: ["6084815412"]
+
+    PaymentList:
+      type: object
+      required: [data, limit, page, pagesCount, total]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Payment" }
+        limit: { type: integer }
+        page: { type: integer }
+        pagesCount: { type: integer }
+        total: { type: integer }
+
+    CreatePaymentRequest:
+      type: object
+      required: [price_amount, price_currency, pay_currency]
+      properties:
+        price_amount: { $ref: "#/components/schemas/Amount" }
+        price_currency:
+          type: string
+          maxLength: 12
+          description: A fiat code or a ticker.
+          examples: [usd]
+        pay_currency:
+          type: string
+          description: The ticker the customer pays with.
+          examples: [btc]
+        pay_amount:
+          $ref: "#/components/schemas/Amount"
+          description: A fixed amount in `pay_currency`. Without it, Turmite converts `price_amount` at the current rate.
+        order_id: { type: string, maxLength: 255, description: Your order reference. Webhooks include it. }
+        order_description: { type: string, maxLength: 1000 }
+        ipn_callback_url:
+          type: string
+          format: uri
+          description: Turmite sends payment webhooks to this URL. On mainnet it must be a public `https` URL.
+        success_url: { type: string, format: uri, description: Where the checkout sends the customer after payment. }
+        cancel_url: { type: string, format: uri }
+        purchase_id:
+          type: string
+          maxLength: 255
+          description: Your id for the purchase. Without it, Turmite makes numeric text.
+        idempotency_key:
+          type: string
+          maxLength: 255
+          description: |
+            A request with a key that the project used before returns the first payment. This is also true for two
+            requests at the same time. Turmite does not compare the other fields.
+
+    Invoice:
+      type: object
+      required:
+        - id
+        - token_id
+        - order_id
+        - order_description
+        - price_amount
+        - price_currency
+        - pay_currency
+        - ipn_callback_url
+        - invoice_url
+        - success_url
+        - cancel_url
+        - created_at
+        - updated_at
+        - expiration_estimate_date
+      properties:
+        id:
+          type: string
+          pattern: "^[0-9]+$"
+          description: The invoice id as numeric text. Use it as `iid` in `POST /v1/invoice-payment`.
+          examples: ["4522625843"]
+        token_id: { type: string, description: The random token in `invoice_url`. }
+        order_id: { type: [string, "null"] }
+        order_description: { type: [string, "null"] }
+        price_amount: { $ref: "#/components/schemas/DecimalString" }
+        price_currency: { type: string, description: Lowercase., examples: [eur] }
+        pay_currency: { type: [string, "null"] }
+        ipn_callback_url: { type: [string, "null"], format: uri }
+        invoice_url:
+          type: string
+          format: uri
+          description: The hosted checkout page, `<site URL>/i/<token_id>`.
+        success_url: { type: [string, "null"], format: uri }
+        cancel_url: { type: [string, "null"], format: uri }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        expiration_estimate_date:
+          type: string
+          format: date-time
+          description: When the invoice expires.
+
+    CreateInvoiceRequest:
+      type: object
+      required: [price_amount, price_currency]
+      properties:
+        price_amount: { $ref: "#/components/schemas/Amount" }
+        price_currency: { type: string, examples: [eur] }
+        pay_currency:
+          type: string
+          description: Set it to skip the coin selection on the invoice page.
+        order_id: { type: string }
+        order_description: { type: string }
+        ipn_callback_url:
+          type: string
+          format: uri
+          description: Turmite sends the webhooks of the invoice's payments to this URL.
+        success_url: { type: string, format: uri }
+        cancel_url: { type: string, format: uri }
+
+    CreateInvoicePaymentRequest:
+      type: object
+      required: [iid, pay_currency]
+      properties:
+        iid:
+          description: The invoice `id`.
+          oneOf:
+            - type: integer
+              format: int64
+            - type: string
+              pattern: "^[0-9]+$"
+        pay_currency: { type: string, examples: [usdttrc20] }
+        purchase_id: { type: string, maxLength: 255 }
+
+    FullCurrency:
+      type: object
+      required:
+        - id
+        - code
+        - name
+        - enable
+        - wallet_regex
+        - priority
+        - extra_id_exists
+        - extra_id_regex
+        - logo_url
+        - track
+        - cg_id
+        - is_maxlimit
+        - network
+        - smart_contract
+        - network_precision
+        - ticker
+      properties:
+        id: { type: integer }
+        code: { type: string, description: The ticker in upper case., examples: [USDTTRC20] }
+        name: { type: string, examples: [Tether USD] }
+        enable:
+          type: boolean
+          description: True when the key's project takes this ticker. Without a key, true when at least one project takes it.
+        wallet_regex: { type: "null", description: Always null. }
+        priority: { type: integer, description: The sort order. }
+        extra_id_exists: { type: boolean, description: True when payments on this network use a memo. }
+        extra_id_regex: { type: "null", description: Always null. }
+        logo_url: { type: "null", description: Always null. }
+        track: { type: boolean, const: false }
+        cg_id: { type: [string, "null"], description: The rate source id of the asset. }
+        is_maxlimit: { type: boolean, const: false }
+        network: { type: string, description: The network code in lower case., examples: [tron] }
+        smart_contract: { type: [string, "null"], description: The token contract. Null for a native coin. }
+        network_precision: { type: string, pattern: "^[0-9]+$", description: The decimals of the asset as numeric text., examples: ["6"] }
+        ticker: { type: string, description: The value for `pay_currency`., examples: [usdttrc20] }
+
+    Balance:
+      type: object
+      description: One entry per ticker.
+      additionalProperties:
+        type: object
+        required: [amount, pendingAmount]
+        properties:
+          amount: { type: number }
+          pendingAmount: { type: number }
+
+    MinAmountResponse:
+      type: object
+      required: [currency_from, currency_to, min_amount]
+      properties:
+        currency_from: { type: string, description: The ticker. }
+        currency_to: { type: string }
+        min_amount: { type: number, description: The smallest payment in `currency_from`. }
+        fiat_equivalent:
+          type: number
+          description: "`min_amount` in the fiat currency of the request. Only when the request has `fiat_equivalent` and a rate is available."
+
+    EstimateResponse:
+      type: object
+      required: [currency_from, amount_from, currency_to, estimated_amount]
+      properties:
+        currency_from: { type: string }
+        amount_from: { type: number }
+        currency_to: { type: string }
+        estimated_amount:
+          $ref: "#/components/schemas/DecimalString"
+          description: The amount in `currency_to`, as a decimal string.
+
+    AuthRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+
+    AuthResponse:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string, description: "A JWT. Send it as `Authorization: Bearer <token>`." }
+
+    PayoutStatus:
+      type: string
+      enum: [pending-approval, pending-otp-verification, pending, signing, initiated, sent, failed, rejected, cancelled, needs-review]
+      description: |
+        `pending-otp-verification`: waits for a one-time code. An API batch waits for `verify`, or the admin who
+        clicked Approve in the dashboard must enter the code that Turmite emailed. `pending-approval`: above a
+        project limit; waits for an admin in the dashboard. `pending`: cleared to send. `signing`: signed and
+        stored, no node took it yet. `initiated`: a node took the transaction. `sent`: on the chain with the
+        network's confirmations. `sent`, `failed`, `rejected` and `cancelled` are final. `needs-review`: Turmite
+        cannot tell whether the payout went out (its nonce is used by another transaction). An admin checks the
+        chain and records the result.
+
+    Payout:
+      type: object
+      required:
+        - id
+        - batch_withdrawal_id
+        - address
+        - extra_id
+        - currency
+        - network
+        - amount
+        - fee
+        - fee_currency
+        - status
+        - hash
+        - error
+        - ipn_callback_url
+        - payout_description
+        - unique_external_id
+        - created_at
+        - requested_at
+        - updated_at
+      properties:
+        id: { type: string }
+        batch_withdrawal_id: { type: string }
+        address: { type: string }
+        extra_id: { type: [string, "null"] }
+        currency: { type: string }
+        network: { type: string, description: "The network code in lower case, such as `eth` or `tron`." }
+        amount: { $ref: "#/components/schemas/DecimalString" }
+        fee:
+          type: [string, "null"]
+          pattern: '^-?[0-9]+(\.[0-9]+)?$'
+          description: The network fee in `fee_currency`, when known. The hot wallet pays it.
+        fee_currency: { type: string, description: "The native coin of the network, such as `eth` or `trx`." }
+        status: { $ref: "#/components/schemas/PayoutStatus" }
+        hash: { type: [string, "null"], description: The transaction hash. }
+        error: { type: [string, "null"] }
+        ipn_callback_url: { type: [string, "null"], format: uri }
+        payout_description: { type: [string, "null"] }
+        unique_external_id: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        requested_at: { type: [string, "null"], format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    PayoutBatch:
+      type: object
+      required: [id, withdrawals]
+      properties:
+        id: { type: string }
+        withdrawals:
+          type: array
+          items: { $ref: "#/components/schemas/Payout" }
+
+    PayoutList:
+      type: object
+      required: [payouts, limit, page, pagesCount, total]
+      properties:
+        payouts:
+          type: array
+          items: { $ref: "#/components/schemas/Payout" }
+        limit: { type: integer }
+        page: { type: integer }
+        pagesCount: { type: integer }
+        total: { type: integer }
+
+    Withdrawal:
+      type: object
+      required: [address, currency, amount]
+      properties:
+        address:
+          type: string
+          description: The destination. It must be in the project's address book.
+        currency: { type: string, examples: [usdttrc20] }
+        amount: { $ref: "#/components/schemas/Amount" }
+        extra_id: { type: string, description: The memo or tag of the destination. }
+        ipn_callback_url:
+          type: string
+          format: uri
+          description: Turmite sends payout webhooks to this URL. Without it, the batch's `ipn_callback_url` is used.
+        payout_description: { type: string }
+        unique_external_id:
+          type: string
+          description: |
+            Your id for this payout. A second request with the same id and fields returns the existing payout.
+            The same id with other fields returns `409`.
+
+    CreatePayoutRequest:
+      type: object
+      required: [withdrawals]
+      properties:
+        withdrawals:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: { $ref: "#/components/schemas/Withdrawal" }
+        ipn_callback_url:
+          type: string
+          format: uri
+          description: Payout webhooks for each withdrawal without its own `ipn_callback_url`.
+
+    VerifyPayoutRequest:
+      type: object
+      required: [verification_code]
+      properties:
+        verification_code:
+          type: string
+          pattern: "^[0-9]{6}$"
+          description: The current TOTP code of the dashboard user.
+
+    ValidateAddressRequest:
+      type: object
+      required: [address, currency]
+      properties:
+        address: { type: string }
+        currency: { type: string }
+
+    ValidateAddressResponse:
+      type: string
+      const: OK
+
+    PayoutFee:
+      type: object
+      required: [currency, amount, fee, network_fee, fee_currency]
+      properties:
+        currency: { type: string }
+        amount: { type: [string, "null"], description: The `amount` of the request. }
+        fee: { type: number, description: "The network fee, in `currency`." }
+        network_fee: { type: number, description: "The network fee in `fee_currency`." }
+        fee_currency: { type: string, description: The native coin that pays the fee. }
+
+    WebhookEnvelope:
+      type: object
+      required: [event, delivery_id, created_at, data]
+      properties:
+        event:
+          type: string
+          description: "`payment.<status>`, `payout.<status>` or `test`."
+          examples: [payment.finished]
+        delivery_id:
+          type: string
+          description: The same value as the `x-turmite-delivery` header.
+        created_at:
+          type: integer
+          format: int64
+          description: Unix time in seconds when Turmite made the event.
+        data:
+          oneOf:
+            - $ref: "#/components/schemas/PaymentWebhook"
+            - $ref: "#/components/schemas/Payout"
+            - $ref: "#/components/schemas/TestEventData"
+
+    TestEventData:
+      type: object
+      description: The `data` of a `test` event.
+      required: [message]
+      properties:
+        message:
+          type: string
+          examples: [Test event from Turmite.]

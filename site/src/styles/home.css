@@ -1,0 +1,212 @@
+/* Home page: shared section styles. */
+.section {
+  padding-block: var(--space-10);
+}
+.section + .section {
+  border-top: 1px solid var(--line);
+}
+.sec-head {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 760px;
+}
+.sec-num {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sec-num::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--fg);
+}
+.sec-head h2 {
+  font-size: var(--step-4);
+  letter-spacing: -0.038em;
+  line-height: 1.04;
+}
+.sec-head p {
+  font-size: 1.1875rem;
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 54ch;
+}
+.sec-head p a,
+.text-link {
+  color: var(--fg);
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+.sec-head p a:hover,
+.text-link:hover {
+  text-decoration-color: var(--fg);
+}
+.more {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 550;
+  font-size: 0.9375rem;
+  color: var(--fg);
+  text-decoration: none;
+}
+.more svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 180ms var(--ease-out);
+}
+.more:hover svg {
+  transform: translateX(3px);
+}
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: var(--space-9);
+  align-items: center;
+}
+.split.rev {
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+}
+@media (max-width: 960px) {
+  .section {
+    padding-block: var(--space-9);
+  }
+  .split,
+  .split.rev {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-7);
+  }
+  .split.rev > :first-child {
+    order: 2;
+  }
+}
+.ticks {
+  list-style: none;
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.ticks li {
+  position: relative;
+  padding-left: 26px;
+  line-height: 1.5;
+}
+.ticks li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0.5em;
+  width: 8px;
+  height: 8px;
+  background: var(--fg);
+}
+.ticks li code {
+  font-size: 0.85em;
+  padding: 0.1em 0.3em;
+  background: var(--surface-2);
+}
+
+/* Panels: terminal and code windows. */
+.panel {
+  border: 1px solid var(--fg);
+  background: var(--bg);
+}
+.panel-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 8px 0 14px;
+  border-bottom: 1px solid var(--fg);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.panel-bar .dots {
+  display: inline-flex;
+  gap: 5px;
+}
+.panel-bar .dots i {
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--fg);
+}
+.panel-bar .grow {
+  flex: 1;
+}
+.panel .astro-code {
+  margin: 0;
+  padding: 18px 20px;
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  overflow-x: auto;
+  background: var(--bg) !important;
+}
+.copy-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.copy-btn:hover {
+  color: var(--fg);
+  border-color: var(--line-strong);
+}
+.copy-btn svg {
+  width: 15px;
+  height: 15px;
+}
+.copy-btn .i-check {
+  display: none;
+}
+.copy-btn[data-done] .i-copy {
+  display: none;
+}
+.copy-btn[data-done] .i-check {
+  display: block;
+  color: var(--fg);
+}
+
+/* Scroll-driven reveal, only where supported and wanted. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal linear both;
+    }
+    main .reveal {
+      animation-timeline: view();
+      animation-range: entry 0% cover 28%;
+    }
+  }
+}
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 520px) {
+  .panel .astro-code {
+    padding: 14px 16px;
+    font-size: 0.75rem;
+  }
+}

@@ -1,0 +1,8 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head"><div><h1>New project</h1><p>A project is one shop or business. It has its own wallets, API keys, webhooks and checkout look.</p></div></header>
+<form class="card card-pad form" method="post" action="{{ shell.base }}/dashboard/projects/new">
+  <div class="field"><label for="name">Name</label><input id="name" name="name" maxlength="80" required autofocus placeholder="Acme Store"><span class="hint">Customers see it on the checkout.</span></div>
+  <div><button class="btn" type="submit">Create project</button></div>
+</form>
+{% endblock %}

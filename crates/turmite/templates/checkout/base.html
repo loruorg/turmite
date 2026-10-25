@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en" data-theme="{{ look.theme }}"{% if !look.style.is_empty() %} style="{{ look.style }}"{% endif %}>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="{% if look.theme == "auto" %}light dark{% else %}{{ look.theme }}{% endif %}">
+<title>{{ title }}</title>
+<link rel="icon" href="{{ base }}/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="{{ base }}/assets/checkout.css">
+</head>
+<body class="page">
+<main class="shell">
+{% block main %}{% endblock %}
+<footer class="foot">
+  {% if look.has_support() %}
+  <p class="help">Help:
+    {% if !look.support_email.is_empty() %}<a href="mailto:{{ look.support_email }}">{{ look.support_email }}</a>{% endif %}
+    {% if !look.support_email.is_empty() && !look.support_url.is_empty() %}<span aria-hidden="true">·</span>{% endif %}
+    {% if !look.support_url.is_empty() %}<a href="{{ look.support_url }}" rel="noopener noreferrer">Support page</a>{% endif %}
+  </p>
+  {% endif %}
+  <a class="by" href="https://turmite.com" rel="noopener noreferrer"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M0 0h4v4h-4zM5 0h4v4h-4zM10 0h4v4h-4zM5 5h4v4h-4zM5 10h4v2a2 2 0 0 1 -4 0z"/></svg>Payments by Turmite</a>
+</footer>
+</main>
+</body>
+</html>

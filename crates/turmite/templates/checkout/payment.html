@@ -1,0 +1,53 @@
+{% extends "checkout/base.html" %}
+{% block main %}
+<article class="card card-pay">
+  {% include "checkout/_store.html" %}
+  <section class="sum">
+    <p class="eyebrow">{{ eyebrow }}</p>
+    <p class="amt"><span class="coin-ico">{% if glyph.is_empty() %}<b class="mono-glyph">{{ symbol }}</b>{% else %}{{ glyph|safe }}{% endif %}</span><code class="sel" tabindex="0">{{ amount }}</code><span class="unit">{{ symbol }}</span></p>
+    <p class="fiat">{{ fiat }}{% if !order.is_empty() %}<span class="dot" aria-hidden="true">·</span><span class="order">{{ order }}</span>{% endif %}</p>
+  </section>
+  <iframe class="frame" src="{{ frame_src }}" title="Payment status"></iframe>
+  {% if !done %}
+  <section class="pay"{% if seconds_left > 0 %} style="--r:{{ seconds_left }};animation-delay:{{ seconds_left }}s"{% else %} data-closed{% endif %}>
+    <figure class="qr">
+      <div class="qr-code">{{ qr|safe }}</div>
+      <figcaption>Scan with a wallet app</figcaption>
+    </figure>
+    <div class="fields">
+      <div class="fl">
+        <span class="lbl">Network</span>
+        <span class="val net">{% if !network_glyph.is_empty() %}<span class="net-ico">{{ network_glyph|safe }}</span>{% endif %}{{ network }}</span>
+      </div>
+      <div class="fl">
+        <span class="lbl">Amount</span>
+        <span class="val"><code class="sel" tabindex="0">{{ amount }}</code> <span class="unit">{{ symbol }}</span></span>
+      </div>
+      <div class="fl">
+        <span class="lbl">Address</span>
+        <span class="val"><code class="sel addr" tabindex="0">{{ address }}</code></span>
+      </div>
+      {% if !memo.is_empty() %}
+      <div class="fl fl-memo">
+        <span class="lbl">Memo <b>required</b></span>
+        <span class="val"><code class="sel" tabindex="0">{{ memo }}</code></span>
+      </div>
+      {% endif %}
+      <p class="warn"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 15 14H1z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 6v3.6M8 11.4v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>{{ warning }}</p>
+      <a class="btn btn-block" href="{{ wallet_link }}">Open in wallet<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5h6.5V10M12.5 3.5 4 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <p class="hint">Tap a value to select it, then copy it.</p>
+    </div>
+  </section>
+  {% endif %}
+  {% if !look.message.is_empty() %}<p class="note">{{ look.message }}</p>{% endif %}
+  {% if !exchange_href.is_empty() || !invoice_href.is_empty() || !cancel_href.is_empty() %}
+  <nav class="more" aria-label="Other options">
+    {% if !exchange_href.is_empty() %}<a class="more-swap" href="{{ exchange_href }}"><span class="swap-ico" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3 5.5h9.5L10 3M13 10.5H3.5L6 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Pay with another coin<small>An exchange turns it into {{ symbol }}</small></span></a>{% endif %}
+    <div class="more-links">
+      {% if !invoice_href.is_empty() %}<a href="{{ invoice_href }}">Choose another coin</a>{% endif %}
+      {% if !cancel_href.is_empty() %}<a href="{{ cancel_href }}">Cancel and return to {{ look.store }}</a>{% endif %}
+    </div>
+  </nav>
+  {% endif %}
+</article>
+{% endblock %}

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en" data-theme="{{ look.theme }}"{% if !look.style.is_empty() %} style="{{ look.style }}"{% endif %}>
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="{% if look.theme == "auto" %}light dark{% else %}{{ look.theme }}{% endif %}">
+{% if !refresh_url.is_empty() %}<meta http-equiv="refresh" content="4;url={{ refresh_url }}">{% endif %}
+<title>{{ title }}</title>
+<link rel="stylesheet" href="{{ base }}/assets/checkout.css">
+</head>
+<body class="fb" style="{{ phase }}">
+<div class="st st-{{ kind }}{% if fresh %} fresh{% endif %}" role="status">
+  <div class="viz" aria-hidden="true">
+    <div class="cells">{% for c in cells %}<i class="{{ c.class }}" style="{{ c.style }}"></i>{% endfor %}</div>
+    <svg class="seal" viewBox="0 0 56 56"><circle class="disc" cx="28" cy="28" r="25"/><path class="tick" d="M17.5 28.5l7 7 14-15"/><path class="cross" d="M21 21l14 14M35 21 21 35"/><path class="back" d="M21 25h11a6 6 0 0 1 0 12h-6M25 20.5 20.5 25l4.5 4.5"/></svg>
+  </div>
+  <div class="txt">
+    <p class="ttl">{{ title }}</p>
+    <p class="dtl">{{ detail }}</p>
+    <div class="row">
+      {% if !segs.is_empty() %}<span class="segs">{% for s in segs %}<i class="{{ s }}" style="--k:{{ loop.index0 }}"></i>{% endfor %}</span>{% endif %}
+      {% if !progress.is_empty() %}<span class="prog">{{ progress }}</span>{% endif %}
+      {% for a in actions %}<a class="btn btn-sm{% if !a.primary %} btn-2{% endif %}" href="{{ a.href }}" target="_top">{{ a.label }}</a>{% endfor %}
+    </div>
+  </div>
+  {% if let Some(e) = eta %}<span class="eta" style="animation-duration:{{ e.seconds }}s;animation-delay:-{{ e.elapsed }}s" aria-hidden="true"></span>{% endif %}
+  {% if let Some(cd) = countdown %}
+  <div class="cd{% if cd.hours %} cd-h{% endif %}" role="timer" aria-label="Time left to pay">
+    <svg class="cd-ring" viewBox="0 0 24 24"><circle class="cd-track" cx="12" cy="12" r="9"/><circle class="cd-bar" cx="12" cy="12" r="9" style="--f:{{ cd.left }};animation-duration:{{ cd.seconds }}s"/></svg>
+    <span class="cd-t" style="--r:{{ cd.seconds }};animation-duration:{{ cd.seconds }}s"></span>
+    <span class="cd-x" style="animation-delay:{{ cd.seconds }}s">Expired</span>
+  </div>
+  {% endif %}
+</div>
+</body>
+</html>

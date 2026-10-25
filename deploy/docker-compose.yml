@@ -1,0 +1,106 @@
+# Turmite on one server: PostgreSQL, the API, the worker and Caddy (automatic TLS).
+#
+#   turmite init --site-url https://pay.example.com   # writes .env and secrets/ next to this file
+#   docker compose up -d
+#
+# deploy/install.sh does both steps. Only the worker reads secrets/. PostgreSQL is on
+# an internal network and has no published port.
+
+name: turmite
+
+x-turmite: &turmite
+  image: ghcr.io/loruorg/turmite:${TURMITE_VERSION:?set TURMITE_VERSION in .env}
+  restart: unless-stopped
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  depends_on:
+    postgres:
+      condition: service_healthy
+  networks: [db, default]
+  logging: &logging
+    driver: json-file
+    options: { max-size: 10m, max-file: "5" }
+
+x-env: &env
+  TURMITE_DATABASE_URL: ${TURMITE_DATABASE_URL:?run turmite init first}
+  TURMITE_SITE_URL: ${TURMITE_SITE_URL:?run turmite init first}
+  TURMITE_SECRET: ${TURMITE_SECRET:?run turmite init first}
+  TURMITE_MODE: ${TURMITE_MODE:?run turmite init first}
+  TURMITE_SMTP_URL: ${TURMITE_SMTP_URL:-}
+  TURMITE_SMTP_FROM: ${TURMITE_SMTP_FROM:-}
+
+services:
+  postgres:
+    image: postgres:18.6-trixie
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: turmite
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run turmite init first}
+      POSTGRES_DB: turmite
+    volumes:
+      # PostgreSQL 18 keeps its data in a versioned subdirectory of this path.
+      - pgdata:/var/lib/postgresql
+    shm_size: 256m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U turmite -d turmite"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [db]
+    logging: *logging
+
+  api:
+    <<: *turmite
+    command: ["serve", "--role", "api"]
+    environment:
+      <<: *env
+      TURMITE_TRUSTED_PROXIES: ${TURMITE_TRUSTED_PROXIES:-}
+      TURMITE_HOT_RECIPIENT: ${TURMITE_HOT_RECIPIENT:?run turmite init first}
+    expose: ["8080"]
+
+  worker:
+    <<: *turmite
+    command: ["serve", "--role", "worker"]
+    environment:
+      <<: *env
+      TURMITE_HOT_IDENTITY_FILE: ${TURMITE_HOT_IDENTITY_FILE:-/secrets/hot-identity.age}
+      TURMITE_HOT_PASSPHRASE_FILE: ${TURMITE_HOT_PASSPHRASE_FILE:-}
+      # Used when the passphrase is not stored: export it before `docker compose up`.
+      TURMITE_HOT_PASSPHRASE: ${TURMITE_HOT_PASSPHRASE:-}
+    volumes:
+      - ./secrets:/secrets:ro
+    # The worker opens no port, so the image health check does not apply.
+    healthcheck:
+      disable: true
+
+  caddy:
+    image: caddy:2.11.7
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      TURMITE_CADDY_ADDRESS: ${TURMITE_CADDY_ADDRESS:?run turmite init first}
+      TURMITE_TRUSTED_PROXIES: ${TURMITE_TRUSTED_PROXIES:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: [no-new-privileges:true]
+    depends_on: [api]
+    logging: *logging
+
+networks:
+  # No route to the internet: only the API and the worker reach PostgreSQL.
+  db:
+    internal: true
+
+volumes:
+  pgdata:
+  caddy-data:
+  caddy-config:

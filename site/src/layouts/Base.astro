@@ -1,0 +1,72 @@
+---
+import { Font } from 'astro:assets';
+import '../styles/global.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  current?: 'home' | 'docs' | 'blog';
+  /** Docs and blog follow the light or dark theme. The home page is always light. */
+  themed?: boolean;
+  /** Docs header with search and theme toggle, full width. */
+  tools?: boolean;
+  type?: 'website' | 'article';
+  footer?: boolean;
+  markdownUrl?: string;
+}
+const {
+  title,
+  description,
+  current = 'home',
+  themed = false,
+  tools = false,
+  type = 'website',
+  footer = true,
+  markdownUrl,
+} = Astro.props;
+const site = Astro.site ?? new URL('https://turmite.com');
+const canonical = new URL(Astro.url.pathname, site).href;
+const fullTitle = title === 'Turmite' ? 'Turmite: self-hosted crypto payment gateway' : `${title} | Turmite`;
+const og = new URL('/og.png', site).href;
+---
+
+<!doctype html>
+<html lang="en" data-themed={themed ? '' : undefined}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {themed && <script is:inline src="/theme-init.js" />}
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="alternate" type="application/rss+xml" title="Turmite blog" href="/rss.xml" />
+    {markdownUrl && <link rel="alternate" type="text/markdown" href={markdownUrl} />}
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="theme-color" content="#ffffff" media={themed ? '(prefers-color-scheme: light)' : undefined} />
+    {themed && <meta name="theme-color" content="#0b0b0b" media="(prefers-color-scheme: dark)" />}
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content="Turmite" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={og} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Turmite: self-hosted crypto payment gateway" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <Font cssVariable="--font-sans" preload />
+    <Font cssVariable="--font-mono" />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <SiteHeader current={current} tools={tools} />
+    <slot />
+    {footer && <SiteFooter />}
+  </body>
+</html>

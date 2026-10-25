@@ -1,0 +1,86 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<div class="crumbs"><a href="{{ shell.base }}/dashboard/p/{{ pid }}/payouts">Payouts</a> / {{ id }}</div>
+<header class="page-head">
+  <div><h1 class="mono-title">Payout {{ id }}</h1><p><span class="badge {{ status_class }}" title="{{ status }}">{{ status_label }}</span></p></div>
+  {% if !tx_href.is_empty() %}<div class="actions"><a class="btn btn-2" href="{{ tx_href }}" target="_blank" rel="noopener">View transaction</a></div>{% endif %}
+</header>
+
+{% if !error.is_empty() %}<div class="alert" role="status">{{ error }}</div>{% endif %}
+
+<section class="card"{% if !error.is_empty() %} style="margin-top:16px"{% endif %}>
+  <dl class="kv">
+    {% for (k, v) in fields %}<dt>{{ k }}</dt><dd>{% if *k == "To" && !address_href.is_empty() %}<a class="mono" href="{{ address_href }}" target="_blank" rel="noopener">{{ v }}</a>{% else if *k == "Transaction" && !tx_href.is_empty() %}<a class="mono" href="{{ tx_href }}" target="_blank" rel="noopener">{{ v }}</a>{% else if *k == "To" || *k == "Memo" || *k == "Transaction" || *k == "From hot wallet" %}<span class="mono">{{ v }}</span>{% else %}{{ v }}{% endif %}</dd>{% endfor %}
+  </dl>
+</section>
+
+{% if awaits_api %}
+<div class="section-title"><h2>Waiting for verification</h2></div>
+<section class="card card-pad"><p>The API client must send the user's two-factor code to <code>POST /v1/payout/{{ batch_id }}/verify</code>. Then the limits decide whether it needs an approval.</p></section>
+{% endif %}
+
+{% if can_approve %}
+<div class="section-title"><h2>Approve</h2></div>
+<section class="card card-pad">
+  {% if code_mine %}
+  <form class="row" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/payouts/{{ id }}/confirm">
+    <div class="field" style="max-width:220px"><label for="ec">Code from the email</label><input id="ec" class="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required></div>
+    <button class="btn" type="submit">Approve payout</button>
+  </form>
+  <p class="hint" style="margin-top:8px">Turmite sent a 6-digit code to your email. It works for 10 minutes and 5 attempts. To get a new one, use the form below.</p>
+  <hr>
+  {% else if !code_other.is_empty() %}
+  <p style="margin-bottom:12px">A code was sent to {{ code_other }}. Only that admin can enter it. You can also approve it yourself.</p>
+  {% else %}
+  <p style="margin-bottom:12px">Step 1: confirm with your two-factor code. Step 2: enter the code that Turmite sends to your email.</p>
+  {% endif %}
+  <form class="row" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/payouts/{{ id }}/approve">
+    <div class="field" style="max-width:180px"><label for="ta">Two-factor code</label><input id="ta" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+    <button class="btn{% if code_mine %} btn-2{% endif %}" type="submit">{% if code_mine %}Send a new code{% else %}Email me a code{% endif %}</button>
+  </form>
+</section>
+{% endif %}
+
+{% if can_resolve %}
+<div class="section-title"><h2>Resolve</h2></div>
+<section class="card card-pad">
+  <p style="margin-bottom:12px">Turmite cannot tell whether this payout went out. Check the hot wallet on an explorer, then record what you found. The decision is final and sends the final webhook.</p>
+  <form class="form" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/payouts/{{ id }}/resolve" data-confirm="Record this decision? It cannot be changed.">
+    <label class="check"><input type="radio" name="outcome" value="sent" required> It was sent</label>
+    <label class="check"><input type="radio" name="outcome" value="not_sent"> It was not sent</label>
+    <div class="field"><label for="nt">Note</label><textarea id="nt" name="note" maxlength="1000" required placeholder="What you checked, for example the transaction hash."></textarea></div>
+    <div class="row">
+      <div class="field" style="max-width:180px"><label for="tr">Two-factor code</label><input id="tr" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+      <button class="btn" type="submit">Save decision</button>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+{% if can_reject || can_cancel %}
+<div class="section-title"><h2>Stop this payout</h2></div>
+<section class="card card-pad">
+  <div class="row">
+    {% if can_reject %}
+    <form class="row" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/payouts/{{ id }}/reject" data-confirm="Reject this payout? This is final.">
+      <div class="field" style="max-width:180px"><label for="tj">Two-factor code</label><input id="tj" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+      <button class="btn btn-danger" type="submit">Reject</button>
+    </form>
+    {% else %}
+    <form class="row" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/payouts/{{ id }}/cancel" data-confirm="Cancel this payout? This is final.">
+      <div class="field" style="max-width:180px"><label for="tx">Two-factor code</label><input id="tx" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+      <button class="btn btn-danger" type="submit">Cancel payout</button>
+    </form>
+    {% endif %}
+  </div>
+  <p class="hint" style="margin-top:8px">{% if can_reject %}Reject ends a payout that waits for approval.{% else %}A payout can be cancelled until Turmite signs it.{% endif %}</p>
+</section>
+{% endif %}
+
+{% if !attempts.is_empty() %}
+<div class="section-title"><h2>Signed transactions</h2></div>
+<section class="card"><div class="table-wrap"><table><thead><tr><th>Transaction</th><th class="num">Nonce</th><th>State</th><th>Signed</th></tr></thead><tbody>
+{% for a in attempts %}<tr><td class="truncate mono">{% if a.href.is_empty() %}{{ a.txid }}{% else %}<a href="{{ a.href }}" target="_blank" rel="noopener">{{ a.txid }}</a>{% endif %}</td><td class="num mono">{{ a.nonce }}</td><td class="small">{{ a.state }}</td><td class="dim">{{ a.created }}</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endif %}
+{% endblock %}

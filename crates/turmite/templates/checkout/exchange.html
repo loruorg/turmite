@@ -1,0 +1,61 @@
+{% extends "checkout/base.html" %}
+{% block main %}
+<article class="card card-x">
+  {% include "checkout/_store.html" %}
+  <section class="sum">
+    <p class="eyebrow">Pay with another coin</p>
+    <p class="amt"><code class="sel" tabindex="0">{{ amount }}</code><span class="unit">{{ symbol }}</span></p>
+    <p class="fiat">An exchange takes your coin and sends this amount to {{ look.store }} on <span class="nw">{{ network }}</span>.</p>
+  </section>
+  {% if !error.is_empty() %}<p class="alert" role="alert">{{ error }}</p>{% endif %}
+  {% if !open_trade.is_empty() %}<p class="notice">You started a swap for this payment. <a href="{{ open_trade }}">Open it</a></p>{% endif %}
+  {% if closed %}
+    <div class="empty-state">
+      <p class="ttl">Paying with another coin is not open</p>
+      <p class="dtl">The payment is closed, or {{ look.store }} turned this option off.</p>
+    </div>
+  {% else if let Some(c) = chosen %}
+    <form class="swap-form" method="post" action="{{ base }}/x/{{ token }}">
+      <input type="hidden" name="coin" value="{{ c.key }}">
+      <div class="picked">
+        <span class="coin-ico">{% if c.glyph.is_empty() %}<b class="mono-glyph">{{ c.ticker }}</b>{% else %}{{ c.glyph|safe }}{% endif %}</span>
+        <span class="chip-txt"><b>{{ c.name }}</b><small>{{ c.ticker }}{% if !c.network.is_empty() %} on {{ c.network }}{% endif %}</small></span>
+        <a class="change" href="{{ base }}/x/{{ token }}">Change</a>
+      </div>
+      <label class="input">
+        <span class="lbl">Refund address{% if chosen_memo %} <b>required</b>{% else %} <i>recommended</i>{% endif %}</span>
+        <input name="refund" value="{{ refund }}" autocomplete="off" spellcheck="false" maxlength="200" placeholder="Your {{ c.ticker }} address"{% if chosen_memo %} required{% endif %}>
+        <span class="hint">If the swap fails, the exchange sends your {{ c.ticker }} back here.</span>
+      </label>
+      {% if chosen_memo %}
+      <label class="input">
+        <span class="lbl">Refund memo <i>if your wallet needs one</i></span>
+        <input name="refund_memo" value="{{ refund_memo }}" autocomplete="off" spellcheck="false" maxlength="100">
+      </label>
+      {% endif %}
+      <button class="btn btn-block" type="submit">Get the deposit address</button>
+      <p class="hint">Trocador finds the best fixed rate among exchanges with KYC rating {{ min_kyc }} or better. The exchange does the swap, not {{ look.store }}.</p>
+    </form>
+  {% else %}
+    <form class="search" method="get" action="{{ base }}/x/{{ token }}" role="search">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <input type="search" name="q" value="{{ query }}" placeholder="Search coins" aria-label="Search coins" autocomplete="off" spellcheck="false">
+      <button class="btn btn-sm" type="submit">Search</button>
+    </form>
+    {% if coins.is_empty() %}
+      <div class="empty-state"><p class="ttl">No coin found</p><p class="dtl">Try another name or ticker.</p></div>
+    {% else %}
+    <ul class="coin-list">
+      {% for c in coins %}
+      <li style="--k:{{ loop.index0 }}"><a href="{{ c.href }}">
+        <span class="coin-ico">{% if c.glyph.is_empty() %}<b class="mono-glyph">{{ c.ticker }}</b>{% else %}{{ c.glyph|safe }}{% endif %}</span>
+        <span class="chip-txt"><b>{{ c.name }}</b><small>{{ c.ticker }}{% if !c.network.is_empty() %} · {{ c.network }}{% endif %}</small></span>
+      </a></li>
+      {% endfor %}
+    </ul>
+    {% if more > 0 %}<p class="hint center">{{ more }} more coins. Search to find them.</p>{% endif %}
+    {% endif %}
+  {% endif %}
+  <nav class="more" aria-label="Other options"><div class="more-links"><a href="{{ base }}/pay/{{ token }}">Pay in {{ symbol }}</a></div></nav>
+</article>
+{% endblock %}

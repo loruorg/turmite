@@ -1,0 +1,44 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<header class="page-head"><div><h1>Settings</h1><p>Project name, payment windows and the IPN signature.</p></div></header>
+{% let tab = "general" %}
+{% include "dashboard/settings_tabs.html" %}
+
+<section class="card">
+  <div class="card-head"><div><h2>General</h2></div></div>
+  <form class="card-pad form" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/settings">
+    <fieldset {% if !can_edit %}disabled{% endif %} class="form">
+    <div class="field"><label for="name">Project name</label><input id="name" name="name" value="{{ name }}" maxlength="80" required><span class="hint">Shown on the checkout.</span></div>
+    <div class="row">
+      <div class="field"><label for="pe">Payment window (minutes)</label><input id="pe" name="payment_expiry" type="number" min="5" max="10080" value="{{ payment_expiry }}" required><span class="hint">Time to pay once a coin is chosen.</span></div>
+      <div class="field"><label for="ie">Invoice window (minutes)</label><input id="ie" name="invoice_expiry" type="number" min="5" max="43200" value="{{ invoice_expiry }}" required><span class="hint">How long a payment link stays open.</span></div>
+    </div>
+    <div class="field"><label for="sh">IPN signature header</label><input id="sh" class="mono" name="signature_header" value="{{ signature_header }}" maxlength="64" required><span class="hint">Header that carries the HMAC-SHA512 signature. If your existing integration reads another header name, enter it here.</span></div>
+    {% if can_edit %}<div><button class="btn" type="submit">Save</button></div>{% endif %}
+    </fieldset>
+  </form>
+</section>
+
+<section class="card">
+  <div class="card-head"><div><h2>IPN secret</h2><p>Signs the IPN of every payment. Your shop uses it to verify that a notification came from this server.</p></div></div>
+  <div class="card-pad">
+    {% if !ipn_secret.is_empty() %}
+      <div class="secret"><code>{{ ipn_secret }}</code><button class="btn btn-sm btn-2 copy" type="button" data-copy="{{ ipn_secret }}" hidden>Copy</button></div>
+      <p class="hint" style="margin-top:8px">Store it in your shop's server configuration. It is not shown again on this page.</p>
+    {% else %}
+      <div class="row">
+        <form class="row" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/settings/ipn-secret">
+          <div class="field"><label for="t1">Two-factor code</label><input id="t1" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+          <button class="btn btn-2" type="submit">Show secret</button>
+        </form>
+        {% if can_edit %}
+        <form class="row" method="post" action="{{ shell.base }}/dashboard/p/{{ pid }}/settings/ipn-secret/rotate" data-confirm="Make a new IPN secret? Your shop must use the new one.">
+          <div class="field"><label for="t2">Two-factor code</label><input id="t2" class="mono" name="totp" inputmode="numeric" autocomplete="one-time-code"></div>
+          <button class="btn btn-danger" type="submit">Rotate</button>
+        </form>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

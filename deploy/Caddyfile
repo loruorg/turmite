@@ -1,0 +1,57 @@
+# Caddy in front of the Turmite API. Caddy gets and renews the TLS certificates.
+# TURMITE_CADDY_ADDRESS comes from .env (`turmite init` writes it from the site URL).
+# After a change: docker compose restart caddy
+
+{
+	# Optional: an email for the certificate authority account.
+	# email ops@example.com
+
+	servers {
+		# Proxies whose X-Forwarded-For Caddy keeps. Default: private ranges.
+		# Behind Cloudflare, set TURMITE_TRUSTED_PROXIES in .env to the private ranges and the
+		# Cloudflare ranges (https://www.cloudflare.com/ips/), separated by spaces. The API
+		# reads the same variable.
+		trusted_proxies static {$TURMITE_TRUSTED_PROXIES:private_ranges}
+	}
+}
+
+# Everything a Turmite site needs. Import it in each site block.
+(turmite) {
+	encode zstd gzip
+
+	request_body {
+		max_size 4MB
+	}
+
+	# The API sets the content security policy, frame and cache headers per page.
+	# These fill the gaps (`?`: only when the API did not set the header).
+	header ?Strict-Transport-Security "max-age=31536000"
+	header ?X-Content-Type-Options "nosniff"
+	header ?Referrer-Policy "same-origin"
+	header ?Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+	header ?Cross-Origin-Opener-Policy "same-origin"
+	header -Server
+	header -Via
+
+	reverse_proxy api:8080 {
+		header_up -Forwarded
+	}
+}
+
+# The site URL (dashboard, API, checkout).
+{$TURMITE_CADDY_ADDRESS} {
+	import turmite
+}
+
+# Checkout domain of a project. Point the domain's DNS to this server, add the
+# domain in the project settings, then copy this block, set the name and restart Caddy.
+#
+# pay.shop.example {
+# 	import turmite
+# }
+
+# Behind Cloudflare with "Full (strict)" TLS, Caddy still gets its own certificate.
+# With an origin certificate from Cloudflare instead, put the files in a mounted
+# directory and add to the site block:
+#
+# 	tls /etc/caddy/origin.pem /etc/caddy/origin-key.pem

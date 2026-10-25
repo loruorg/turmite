@@ -1,0 +1,101 @@
+[
+  {
+    "body": "{\"actually_paid\":0.00123,\"created_at\":\"2026-10-23T12:00:00.000Z\",\"expiration_estimate_date\":\"2026-10-23T12:15:00.000Z\",\"invoice_id\":4522625843,\"network\":\"btc\",\"network_precision\":8,\"order_description\":\"Order #1042\",\"order_id\":\"1042\",\"outcome_amount\":0.0012177,\"outcome_currency\":\"btc\",\"pay_address\":\"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\",\"pay_amount\":0.00123,\"pay_currency\":\"btc\",\"payin_extra_id\":null,\"payin_hash\":\"4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b\",\"payment_id\":5077125051,\"payment_status\":\"finished\",\"payment_url\":\"https://pay.example.com/pay/Q2w9Zr1kXbT4mN7cV0aLp3Ye\",\"payout_hash\":null,\"price_amount\":100.0,\"price_currency\":\"usd\",\"purchase_id\":\"purchase_8f3a2c\",\"smart_contract\":null,\"updated_at\":\"2026-10-23T12:14:03.512Z\"}",
+    "body_pretty": "{\n  \"actually_paid\": 0.00123,\n  \"created_at\": \"2026-10-23T12:00:00.000Z\",\n  \"expiration_estimate_date\": \"2026-10-23T12:15:00.000Z\",\n  \"invoice_id\": 4522625843,\n  \"network\": \"btc\",\n  \"network_precision\": 8,\n  \"order_description\": \"Order #1042\",\n  \"order_id\": \"1042\",\n  \"outcome_amount\": 0.0012177,\n  \"outcome_currency\": \"btc\",\n  \"pay_address\": \"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\",\n  \"pay_amount\": 0.00123,\n  \"pay_currency\": \"btc\",\n  \"payin_extra_id\": null,\n  \"payin_hash\": \"4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b\",\n  \"payment_id\": 5077125051,\n  \"payment_status\": \"finished\",\n  \"payment_url\": \"https://pay.example.com/pay/Q2w9Zr1kXbT4mN7cV0aLp3Ye\",\n  \"payout_hash\": null,\n  \"price_amount\": 100.0,\n  \"price_currency\": \"usd\",\n  \"purchase_id\": \"purchase_8f3a2c\",\n  \"smart_contract\": null,\n  \"updated_at\": \"2026-10-23T12:14:03.512Z\"\n}",
+    "body_reversed": "{\"updated_at\":\"2026-10-23T12:14:03.512Z\",\"smart_contract\":null,\"purchase_id\":\"purchase_8f3a2c\",\"price_currency\":\"usd\",\"price_amount\":100.0,\"payout_hash\":null,\"payment_url\":\"https://pay.example.com/pay/Q2w9Zr1kXbT4mN7cV0aLp3Ye\",\"payment_status\":\"finished\",\"payment_id\":5077125051,\"payin_hash\":\"4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b\",\"payin_extra_id\":null,\"pay_currency\":\"btc\",\"pay_amount\":0.00123,\"pay_address\":\"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\",\"outcome_currency\":\"btc\",\"outcome_amount\":0.0012177,\"order_id\":\"1042\",\"order_description\":\"Order #1042\",\"network_precision\":8,\"network\":\"btc\",\"invoice_id\":4522625843,\"expiration_estimate_date\":\"2026-10-23T12:15:00.000Z\",\"created_at\":\"2026-10-23T12:00:00.000Z\",\"actually_paid\":0.00123}",
+    "name": "payment_finished",
+    "object_input_ok": false,
+    "secret": "ipn-secret-for-tests",
+    "sig": "24300b4375a4875081e135d5af3d47a55446cab946f52bdd8d45e98f04441793edd81ebef99a7a99f80d58936f08a56b014fccd0e2ca52bf56ff9c6903df6cd2",
+    "signature_v1": "v1=241e5fc74ad3e0e04cac8bd7824792f7a51f32d34df18a46eae1680733e647f1",
+    "timestamp": 1761220800
+  },
+  {
+    "body": "{\"actually_paid\":0.0,\"created_at\":\"2026-10-23T12:00:00.000Z\",\"expiration_estimate_date\":\"2026-10-23T12:15:00.000Z\",\"invoice_id\":4522625843,\"network\":\"btc\",\"network_precision\":8,\"order_description\":\"Order #1042\",\"order_id\":\"1042\",\"outcome_amount\":0.0012177,\"outcome_currency\":\"btc\",\"pay_address\":\"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\",\"pay_amount\":0.00123,\"pay_currency\":\"btc\",\"payin_extra_id\":null,\"payin_hash\":\"4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b\",\"payment_id\":5077125051,\"payment_status\":\"waiting\",\"payment_url\":\"https://pay.example.com/pay/Q2w9Zr1kXbT4mN7cV0aLp3Ye\",\"payout_hash\":null,\"price_amount\":25.5,\"price_currency\":\"usd\",\"purchase_id\":\"purchase_8f3a2c\",\"smart_contract\":null,\"updated_at\":\"2026-10-23T12:14:03.512Z\"}",
+    "body_pretty": "{\n  \"actually_paid\": 0.0,\n  \"created_at\": \"2026-10-23T12:00:00.000Z\",\n  \"expiration_estimate_date\": \"2026-10-23T12:15:00.000Z\",\n  \"invoice_id\": 4522625843,\n  \"network\": \"btc\",\n  \"network_precision\": 8,\n  \"order_description\": \"Order #1042\",\n  \"order_id\": \"1042\",\n  \"outcome_amount\": 0.0012177,\n  \"outcome_currency\": \"btc\",\n  \"pay_address\": \"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\",\n  \"pay_amount\": 0.00123,\n  \"pay_currency\": \"btc\",\n  \"payin_extra_id\": null,\n  \"payin_hash\": \"4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b\",\n  \"payment_id\": 5077125051,\n  \"payment_status\": \"waiting\",\n  \"payment_url\": \"https://pay.example.com/pay/Q2w9Zr1kXbT4mN7cV0aLp3Ye\",\n  \"payout_hash\": null,\n  \"price_amount\": 25.5,\n  \"price_currency\": \"usd\",\n  \"purchase_id\": \"purchase_8f3a2c\",\n  \"smart_contract\": null,\n  \"updated_at\": \"2026-10-23T12:14:03.512Z\"\n}",
+    "body_reversed": "{\"updated_at\":\"2026-10-23T12:14:03.512Z\",\"smart_contract\":null,\"purchase_id\":\"purchase_8f3a2c\",\"price_currency\":\"usd\",\"price_amount\":25.5,\"payout_hash\":null,\"payment_url\":\"https://pay.example.com/pay/Q2w9Zr1kXbT4mN7cV0aLp3Ye\",\"payment_status\":\"waiting\",\"payment_id\":5077125051,\"payin_hash\":\"4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b\",\"payin_extra_id\":null,\"pay_currency\":\"btc\",\"pay_amount\":0.00123,\"pay_address\":\"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\",\"outcome_currency\":\"btc\",\"outcome_amount\":0.0012177,\"order_id\":\"1042\",\"order_description\":\"Order #1042\",\"network_precision\":8,\"network\":\"btc\",\"invoice_id\":4522625843,\"expiration_estimate_date\":\"2026-10-23T12:15:00.000Z\",\"created_at\":\"2026-10-23T12:00:00.000Z\",\"actually_paid\":0.0}",
+    "name": "payment_waiting_zero_paid",
+    "object_input_ok": false,
+    "secret": "ipn-secret-for-tests",
+    "sig": "75ef66f111485201a394b9f39df98f722eed670ddf3bf14f95768a2cc3817da345b3061632f61839408b5883b7c370f3a01f1caa70206e23fed2cde8ae3339d5",
+    "signature_v1": "v1=027d753e0529ae3882fe8d54aa347dd05c4e9e147a53656608181711c51fc141",
+    "timestamp": 1761220800
+  },
+  {
+    "body": "{\"a_tiny_1e-5\":0.00001,\"b_tiny_1e-6\":1e-6,\"c_tiny_1.234e-6\":1.234e-6,\"d_tiny_1e-7\":1e-7,\"e_big_1e16\":1e+16,\"f_big_1e17\":1e+17,\"g_big_1.2345e20\":1.2345678901234568e+20,\"h_big_1e21\":1e+21,\"i_big_1e22\":1e+22,\"j_neg_half\":-0.5,\"k_sum\":0.30000000000000004,\"l_zero\":0.0,\"m_neg_zero\":-0.0,\"n_u64_max\":18446744073709551615,\"o_neg_int\":-42,\"p_int\":7,\"q_float_int\":9007199254740992.0,\"r_tiny_5e-324\":5e-324}",
+    "body_pretty": "{\n  \"a_tiny_1e-5\": 0.00001,\n  \"b_tiny_1e-6\": 1e-6,\n  \"c_tiny_1.234e-6\": 1.234e-6,\n  \"d_tiny_1e-7\": 1e-7,\n  \"e_big_1e16\": 1e+16,\n  \"f_big_1e17\": 1e+17,\n  \"g_big_1.2345e20\": 1.2345678901234568e+20,\n  \"h_big_1e21\": 1e+21,\n  \"i_big_1e22\": 1e+22,\n  \"j_neg_half\": -0.5,\n  \"k_sum\": 0.30000000000000004,\n  \"l_zero\": 0.0,\n  \"m_neg_zero\": -0.0,\n  \"n_u64_max\": 18446744073709551615,\n  \"o_neg_int\": -42,\n  \"p_int\": 7,\n  \"q_float_int\": 9007199254740992.0,\n  \"r_tiny_5e-324\": 5e-324\n}",
+    "body_reversed": "{\"r_tiny_5e-324\":5e-324,\"q_float_int\":9007199254740992.0,\"p_int\":7,\"o_neg_int\":-42,\"n_u64_max\":18446744073709551615,\"m_neg_zero\":-0.0,\"l_zero\":0.0,\"k_sum\":0.30000000000000004,\"j_neg_half\":-0.5,\"i_big_1e22\":1e+22,\"h_big_1e21\":1e+21,\"g_big_1.2345e20\":1.2345678901234568e+20,\"f_big_1e17\":1e+17,\"e_big_1e16\":1e+16,\"d_tiny_1e-7\":1e-7,\"c_tiny_1.234e-6\":1.234e-6,\"b_tiny_1e-6\":1e-6,\"a_tiny_1e-5\":0.00001}",
+    "name": "numbers",
+    "object_input_ok": false,
+    "secret": "ipn-secret-for-tests",
+    "sig": "3819abd773e71e225b2bed2bbe98e32a12d621a6e49a78033cce502cc1129798918d299f2fc750fdb7748642ec68d5fdfae904581790f6f19a9553832351a374",
+    "signature_v1": "v1=c9db6463ae98b5857fcde23453ea322327f2ee6fc77bca9768d4a5e61ee0dea9",
+    "timestamp": 1761220800
+  },
+  {
+    "body": "{\"\":5,\"B\":4,\"a\":3,\"a\\u0000\":6,\"z\":\"quote \\\" backslash \\\\ slash / tab \\t newline \\n cr \\r bs \\b ff \\f ctl \\u0001 del \u007f\",\"\u00e9\":\"caf\u00e9 \u65e5\u672c \ud83d\ude00 \u2028 \u2029\",\"\uff61\":1,\"\ud83d\ude00\":2}",
+    "body_pretty": "{\n  \"\": 5,\n  \"B\": 4,\n  \"a\": 3,\n  \"a\\u0000\": 6,\n  \"z\": \"quote \\\" backslash \\\\ slash / tab \\t newline \\n cr \\r bs \\b ff \\f ctl \\u0001 del \u007f\",\n  \"\u00e9\": \"caf\u00e9 \u65e5\u672c \ud83d\ude00 \u2028 \u2029\",\n  \"\uff61\": 1,\n  \"\ud83d\ude00\": 2\n}",
+    "body_reversed": "{\"\ud83d\ude00\":2,\"\uff61\":1,\"\u00e9\":\"caf\u00e9 \u65e5\u672c \ud83d\ude00 \u2028 \u2029\",\"z\":\"quote \\\" backslash \\\\ slash / tab \\t newline \\n cr \\r bs \\b ff \\f ctl \\u0001 del \u007f\",\"a\\u0000\":6,\"a\":3,\"B\":4,\"\":5}",
+    "name": "strings_and_keys",
+    "object_input_ok": true,
+    "secret": "ipn-secret-for-tests",
+    "sig": "731b0799e93bd9297eebc697060f174864dff72ecfd44eae32b8a8d7f3daa99381bd252123c8241ae461f62a442723c7096b7a797223b47ac92a21d84a6239b5",
+    "signature_v1": "v1=d900318f07e4c49c25b2c3a5cfb7bbe2d261d5d19cb572fa96adea20749651a2",
+    "timestamp": 1761220800
+  },
+  {
+    "body": "{\"empty_obj\":{},\"list\":[[1,2,[3,[]]],[],[{\"a\":{\"c\":\"x\",\"d\":[true,false,null]},\"b\":1}],null,true,false,\"s\"],\"obj\":{\"x\":null,\"y\":[{\"k1\":1,\"k2\":2}]}}",
+    "body_pretty": "{\n  \"empty_obj\": {},\n  \"list\": [\n    [\n      1,\n      2,\n      [\n        3,\n        []\n      ]\n    ],\n    [],\n    [\n      {\n        \"a\": {\n          \"c\": \"x\",\n          \"d\": [\n            true,\n            false,\n            null\n          ]\n        },\n        \"b\": 1\n      }\n    ],\n    null,\n    true,\n    false,\n    \"s\"\n  ],\n  \"obj\": {\n    \"x\": null,\n    \"y\": [\n      {\n        \"k1\": 1,\n        \"k2\": 2\n      }\n    ]\n  }\n}",
+    "body_reversed": "{\"obj\":{\"y\":[{\"k2\":2,\"k1\":1}],\"x\":null},\"list\":[[1,2,[3,[]]],[],[{\"b\":1,\"a\":{\"d\":[true,false,null],\"c\":\"x\"}}],null,true,false,\"s\"],\"empty_obj\":{}}",
+    "name": "nested_arrays",
+    "object_input_ok": true,
+    "secret": "ipn-secret-for-tests",
+    "sig": "ea242982435833e128d1823f039d9f89e5135db2524edb224074ca756cf02552263c14ad60715614ceaed7cb7e7971b3c83a40b1c634a06faafbbeb3d2b100ae",
+    "signature_v1": "v1=88fc6071dccc3e44d127b8a3d32f5c3cdd9aff9622f08ba82dd0cba487768604",
+    "timestamp": 1761220800
+  },
+  {
+    "body": "{\"created_at\":1761221644,\"data\":{\"actually_paid\":0.00123,\"created_at\":\"2026-10-23T12:00:00.000Z\",\"expiration_estimate_date\":\"2026-10-23T12:15:00.000Z\",\"invoice_id\":4522625843,\"network\":\"btc\",\"network_precision\":8,\"order_description\":\"Order #1042\",\"order_id\":\"1042\",\"outcome_amount\":0.0012177,\"outcome_currency\":\"btc\",\"pay_address\":\"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\",\"pay_amount\":0.00123,\"pay_currency\":\"btc\",\"payin_extra_id\":null,\"payin_hash\":\"4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b\",\"payment_id\":5077125051,\"payment_status\":\"finished\",\"payment_url\":\"https://pay.example.com/pay/Q2w9Zr1kXbT4mN7cV0aLp3Ye\",\"payout_hash\":null,\"price_amount\":100.0,\"price_currency\":\"usd\",\"purchase_id\":\"purchase_8f3a2c\",\"smart_contract\":null,\"updated_at\":\"2026-10-23T12:14:03.512Z\"},\"delivery_id\":\"dlv01JBZ8Q2N4hT6sWq3mXk9a\",\"event\":\"payment.finished\"}",
+    "body_pretty": "{\n  \"created_at\": 1761221644,\n  \"data\": {\n    \"actually_paid\": 0.00123,\n    \"created_at\": \"2026-10-23T12:00:00.000Z\",\n    \"expiration_estimate_date\": \"2026-10-23T12:15:00.000Z\",\n    \"invoice_id\": 4522625843,\n    \"network\": \"btc\",\n    \"network_precision\": 8,\n    \"order_description\": \"Order #1042\",\n    \"order_id\": \"1042\",\n    \"outcome_amount\": 0.0012177,\n    \"outcome_currency\": \"btc\",\n    \"pay_address\": \"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\",\n    \"pay_amount\": 0.00123,\n    \"pay_currency\": \"btc\",\n    \"payin_extra_id\": null,\n    \"payin_hash\": \"4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b\",\n    \"payment_id\": 5077125051,\n    \"payment_status\": \"finished\",\n    \"payment_url\": \"https://pay.example.com/pay/Q2w9Zr1kXbT4mN7cV0aLp3Ye\",\n    \"payout_hash\": null,\n    \"price_amount\": 100.0,\n    \"price_currency\": \"usd\",\n    \"purchase_id\": \"purchase_8f3a2c\",\n    \"smart_contract\": null,\n    \"updated_at\": \"2026-10-23T12:14:03.512Z\"\n  },\n  \"delivery_id\": \"dlv01JBZ8Q2N4hT6sWq3mXk9a\",\n  \"event\": \"payment.finished\"\n}",
+    "body_reversed": "{\"event\":\"payment.finished\",\"delivery_id\":\"dlv01JBZ8Q2N4hT6sWq3mXk9a\",\"data\":{\"updated_at\":\"2026-10-23T12:14:03.512Z\",\"smart_contract\":null,\"purchase_id\":\"purchase_8f3a2c\",\"price_currency\":\"usd\",\"price_amount\":100.0,\"payout_hash\":null,\"payment_url\":\"https://pay.example.com/pay/Q2w9Zr1kXbT4mN7cV0aLp3Ye\",\"payment_status\":\"finished\",\"payment_id\":5077125051,\"payin_hash\":\"4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b\",\"payin_extra_id\":null,\"pay_currency\":\"btc\",\"pay_amount\":0.00123,\"pay_address\":\"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\",\"outcome_currency\":\"btc\",\"outcome_amount\":0.0012177,\"order_id\":\"1042\",\"order_description\":\"Order #1042\",\"network_precision\":8,\"network\":\"btc\",\"invoice_id\":4522625843,\"expiration_estimate_date\":\"2026-10-23T12:15:00.000Z\",\"created_at\":\"2026-10-23T12:00:00.000Z\",\"actually_paid\":0.00123},\"created_at\":1761221644}",
+    "name": "endpoint_envelope",
+    "object_input_ok": false,
+    "secret": "ipn-secret-for-tests",
+    "sig": "ef5d69aaa9bb69c0467d8a65d4c4145eaa76d7332ce7d2f6044a1b94028c43ecfa177ffa7ffa10155015a8cae1e9fc7dd41509ed97db74b32d9c989d760f9d05",
+    "signature_v1": "v1=9b5313a386a1f4f5b427617ff25b6a6e0f7ab92f653662617cd5276a96d8207c",
+    "timestamp": 1761220800
+  },
+  {
+    "body": "{\"created_at\":1761221644,\"data\":{\"message\":\"Test event from Turmite.\"},\"delivery_id\":\"Zt7Kq2LmN8pR4vX1cB6dF3hJ\",\"event\":\"test\"}",
+    "body_pretty": "{\n  \"created_at\": 1761221644,\n  \"data\": {\n    \"message\": \"Test event from Turmite.\"\n  },\n  \"delivery_id\": \"Zt7Kq2LmN8pR4vX1cB6dF3hJ\",\n  \"event\": \"test\"\n}",
+    "body_reversed": "{\"event\":\"test\",\"delivery_id\":\"Zt7Kq2LmN8pR4vX1cB6dF3hJ\",\"data\":{\"message\":\"Test event from Turmite.\"},\"created_at\":1761221644}",
+    "name": "test_event",
+    "object_input_ok": true,
+    "secret": "ipn-secret-for-tests",
+    "sig": "71e5d6631838f599cae41c33d7586d14124bd7a7bc1e02d1682e2a6b52523d251f9784517a120017f56277ef9adfe767fe1bea83dd870095491dc11a4361f447",
+    "signature_v1": "v1=94e3a889320c0c1243ded5bbe3bf66e674c8729925323030cc4463e626d45e61",
+    "timestamp": 1761220800
+  },
+  {
+    "body": "{\"actually_paid\":0.00123,\"created_at\":\"2026-10-23T12:00:00.000Z\",\"expiration_estimate_date\":\"2026-10-23T12:15:00.000Z\",\"invoice_id\":4522625843,\"network\":\"btc\",\"network_precision\":8,\"order_description\":\"Order #1042\",\"order_id\":\"1042\",\"outcome_amount\":0.0012177,\"outcome_currency\":\"btc\",\"pay_address\":\"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\",\"pay_amount\":0.00123,\"pay_currency\":\"btc\",\"payin_extra_id\":null,\"payin_hash\":\"4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b\",\"payment_id\":5077125051,\"payment_status\":\"finished\",\"payment_url\":\"https://pay.example.com/pay/Q2w9Zr1kXbT4mN7cV0aLp3Ye\",\"payout_hash\":null,\"price_amount\":100,\"price_currency\":\"usd\",\"purchase_id\":\"purchase_8f3a2c\",\"smart_contract\":null,\"updated_at\":\"2026-10-23T12:14:03.512Z\"}",
+    "body_pretty": "{\n  \"actually_paid\": 0.00123,\n  \"created_at\": \"2026-10-23T12:00:00.000Z\",\n  \"expiration_estimate_date\": \"2026-10-23T12:15:00.000Z\",\n  \"invoice_id\": 4522625843,\n  \"network\": \"btc\",\n  \"network_precision\": 8,\n  \"order_description\": \"Order #1042\",\n  \"order_id\": \"1042\",\n  \"outcome_amount\": 0.0012177,\n  \"outcome_currency\": \"btc\",\n  \"pay_address\": \"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\",\n  \"pay_amount\": 0.00123,\n  \"pay_currency\": \"btc\",\n  \"payin_extra_id\": null,\n  \"payin_hash\": \"4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b\",\n  \"payment_id\": 5077125051,\n  \"payment_status\": \"finished\",\n  \"payment_url\": \"https://pay.example.com/pay/Q2w9Zr1kXbT4mN7cV0aLp3Ye\",\n  \"payout_hash\": null,\n  \"price_amount\": 100,\n  \"price_currency\": \"usd\",\n  \"purchase_id\": \"purchase_8f3a2c\",\n  \"smart_contract\": null,\n  \"updated_at\": \"2026-10-23T12:14:03.512Z\"\n}",
+    "body_reversed": "{\"updated_at\":\"2026-10-23T12:14:03.512Z\",\"smart_contract\":null,\"purchase_id\":\"purchase_8f3a2c\",\"price_currency\":\"usd\",\"price_amount\":100,\"payout_hash\":null,\"payment_url\":\"https://pay.example.com/pay/Q2w9Zr1kXbT4mN7cV0aLp3Ye\",\"payment_status\":\"finished\",\"payment_id\":5077125051,\"payin_hash\":\"4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b\",\"payin_extra_id\":null,\"pay_currency\":\"btc\",\"pay_amount\":0.00123,\"pay_address\":\"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\",\"outcome_currency\":\"btc\",\"outcome_amount\":0.0012177,\"order_id\":\"1042\",\"order_description\":\"Order #1042\",\"network_precision\":8,\"network\":\"btc\",\"invoice_id\":4522625843,\"expiration_estimate_date\":\"2026-10-23T12:15:00.000Z\",\"created_at\":\"2026-10-23T12:00:00.000Z\",\"actually_paid\":0.00123}",
+    "name": "payment_js_numbers",
+    "object_input_ok": true,
+    "secret": "ipn-secret-for-tests",
+    "sig": "758122df34920f9b3ba875b36d32be0fcb2f311f08e17aefdcb31bc42811ed6009b3985ba1d0606862b352d88dcea8678e748624028f03f633f1e50a9bc2bce6",
+    "signature_v1": "v1=59a39c70a3410813d7a55ea999df671176e0f2f24b40d47ab4d0baff358ae725",
+    "timestamp": 1761220800
+  },
+  {
+    "body": "{\"a_small\":0.000001,\"b_tiny\":1e-7,\"c_tiny\":1.5e-7,\"d_decimals\":123456789.123,\"e_huge\":1e+21,\"f_int\":100,\"g_neg\":-0.5,\"h_fee\":{\"currency\":\"btc\",\"depositFee\":0,\"serviceFee\":0,\"withdrawalFee\":0.0000123},\"i_text\":\"caf\u00e9 \u2713 \ud83d\ude00\"}",
+    "body_pretty": "{\n  \"a_small\": 0.000001,\n  \"b_tiny\": 1e-7,\n  \"c_tiny\": 1.5e-7,\n  \"d_decimals\": 123456789.123,\n  \"e_huge\": 1e+21,\n  \"f_int\": 100,\n  \"g_neg\": -0.5,\n  \"h_fee\": {\"currency\":\"btc\",\"depositFee\":0,\"serviceFee\":0,\"withdrawalFee\":0.0000123},\n  \"i_text\": \"caf\u00e9 \u2713 \ud83d\ude00\"\n}",
+    "body_reversed": "{\"i_text\":\"caf\u00e9 \u2713 \ud83d\ude00\",\"h_fee\":{\"currency\":\"btc\",\"depositFee\":0,\"serviceFee\":0,\"withdrawalFee\":0.0000123},\"g_neg\":-0.5,\"f_int\":100,\"e_huge\":1e+21,\"d_decimals\":123456789.123,\"c_tiny\":1.5e-7,\"b_tiny\":1e-7,\"a_small\":0.000001}",
+    "name": "js_numbers",
+    "object_input_ok": true,
+    "secret": "ipn-secret-for-tests",
+    "sig": "b05c78303ba987e8aea5ed4759deef88fb6844ea1c0b04ac2fe0ad4d71caf35109d96f56b862e700dff87d69c476751d2aade85361dd0b230d70fb3459abab68",
+    "signature_v1": "v1=932ba2afe60983180a82303e3e62a43dd1ebd4f903ad3278dc1163cff16bff76",
+    "timestamp": 1761220800
+  }
+]
