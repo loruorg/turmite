@@ -137,6 +137,42 @@ GitHub Actions builds each release image from a version tag, with an SBOM and a 
 gh attestation verify oci://ghcr.io/loruorg/turmite:<version> --owner loruorg
 ```
 
+## Rotate secrets
+
+Rotate a secret when a person who knew it leaves, or when you think that it leaked.
+
+| Secret | How to rotate | Effect |
+|---|---|---|
+| API key | Create a key on **API keys**, put it in your shop, then revoke the old key | A revoked key stops at once |
+| IPN secret | **Settings → General → IPN secret → Rotate**, with a fresh two-factor code | Each delivery from then on, retries included, is signed with the new secret. Change the secret in your shop at the same time |
+| Webhook endpoint secret | Add a new endpoint, switch your receiver to it, then delete the old endpoint | The old endpoint gets no more events |
+| Password | **Account**, with the current password | Ends the user's other sessions |
+| Two-factor | `turmite user reset2fa <email>`, then enrol again | Ends all sessions of the user. See [CLI](/docs/cli/) |
+| Node URL or node API key | Add the node with the new URL, then remove the old node | Removing a node needs a fresh two-factor code |
+| Trocador API key | Enter the new key on **Settings → Exchange** | The old key is no longer used |
+| Hot wallet key | Make or import a new hot wallet. Send the balance of the old one to it with a payout, then assign the new one to the projects | The old key stays sealed in the database. It holds no balance |
+| Database password | Run `ALTER ROLE turmite PASSWORD '<new>';` in the `postgres` container. Set the same value in `POSTGRES_PASSWORD` and `TURMITE_DATABASE_URL` in `.env`, then run `docker compose up -d` | The roles connect with the new password |
+| `TURMITE_SECRET` | No command. See [Environment variables](/docs/environment/#turmite_secret) | Do not change it on a running install |
+| Deposit seed | Never | Tron, Solana and TON deposit addresses derive from it. Unswept funds at those addresses need it |
+
+## Deposit contracts
+
+The EVM deposit contracts are in `contracts/` in the repository. The tests check these properties:
+
+- A deposit contract sends native coin and tokens only to the cold wallet of its factory. Anyone can call `flush`.
+- The cold wallet and the implementation never change. The factory has no owner, no admin and no upgrade path.
+- A token that fails, blocks the cold wallet, returns `false`, takes a fee on transfer or calls back into the contract does not stop the other tokens and does not move funds elsewhere.
+- Random calls to a deposit contract cannot move funds.
+
+| Test kind | What it does |
+|---|---|
+| Unit tests | Each property above, with standard tokens, tokens without a return value, block lists, fee-on-transfer and reentrant tokens |
+| Fuzz tests | 2000 runs each: random salts, amounts, callers and call data |
+| Invariant tests | 256 runs of 100 random calls: funding, flushes, block-list changes, reentrant tokens and raw calls. After each call, all funds are at a deposit address or at the cold wallet, and the configuration is the same |
+| Fork tests | Real USDC and USDT on Ethereum, Base, Polygon and BNB Smart Chain, including a deposit address on the USDC and USDT block lists |
+
+To check a deployed factory, build the contracts with the settings in `contracts/foundry.toml` (solc 0.8.38, EVM version cancun, no metadata hash). The bytecode then matches `contracts/out-min/DepositFactory.json`, which the server embeds. That file also gives the formulas for the factory address, the implementation address and each deposit address. Compare the deposit address in the dashboard with the formula before the first payment.
+
 ## Operator duties
 
 The software cannot do everything. Before you go live:

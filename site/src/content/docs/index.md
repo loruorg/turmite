@@ -78,6 +78,17 @@ Turmite is one Rust binary and a PostgreSQL database. The binary runs as two pro
 
 See [Architecture](/docs/architecture/).
 
+## For coding agents
+
+The docs are available in forms that a coding agent can read:
+
+- [`/llms.txt`](/llms.txt): an index of the docs pages.
+- [`/llms-full.txt`](/llms-full.txt): all docs pages in one file.
+- Each page as Markdown: add `.md` to its path, for example [`/docs/webhooks.md`](/docs/webhooks.md).
+- [`/openapi.yaml`](/openapi.yaml): the OpenAPI description of the merchant API.
+
+Give the agent `llms-full.txt` and the task, for example: "Add Turmite payments to the checkout of this shop. Verify the IPN signature."
+
 ## Next steps
 
 - Try it on your computer: [Quick start](/docs/quick-start/).

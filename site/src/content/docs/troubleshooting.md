@@ -220,6 +220,33 @@ Turmite cannot tell if the transaction landed. Check the hot wallet's history on
 
 Your server clock is wrong. Turn on time sync: `sudo timedatectl set-ntp true`.
 
+## Pay with another coin
+
+### The checkout does not show "Pay with another coin"
+
+- The install runs on testnet. Trocador swaps mainnet coins only.
+- The exchange is off, or the project has no Trocador API key. See [Pay with any coin](/docs/exchange/#turn-it-on).
+- The payment is not `waiting` or `partially_paid`, or its window closed.
+
+### Errors on the swap page
+
+| Message | Cause | What to do |
+|---|---|---|
+| The amount to send, ..., is less than the exchange minimum | The amount is below the minimum for that coin | The customer chooses another coin or pays directly |
+| The amount to send, ..., is more than the exchange maximum | The amount is above the maximum for that coin | Same as above |
+| The exchange has no quote for this coin | No exchange with the KYC rating that you allow offers this pair now | Allow a lower KYC rating, or the customer chooses another coin |
+| The exchange cannot do this swap now | Trocador refused the trade or did not answer | Try again later. The customer can pay directly |
+| The exchange returned no deposit address | Trocador answered without an address | Try again |
+| The exchange cannot send this payment's coin | Trocador does not list the payment's coin and network | The customer pays directly. Or accept a coin that Trocador lists |
+
+### Saving the API key fails
+
+"The exchange did not accept the key" or "The exchange refused the API key" means that Trocador refused it. Check the key in your Trocador account. Turmite does not save a refused key.
+
+### The customer paid the exchange, but the payment is not paid
+
+Turmite credits only what reaches the deposit address on chain. Open the payment in the dashboard and read its deposits. The customer's swap page shows the swap status and the swap ID. When the exchange sent less than the amount due, the payment is `partially_paid`. A refunded swap sends the coins to the refund address that the customer entered. Without a refund address, the customer contacts the exchange's support with the swap ID.
+
 ## Database
 
 Open a PostgreSQL shell:

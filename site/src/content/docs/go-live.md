@@ -77,6 +77,18 @@ Complete each item before you send real customers to Turmite.
 - [ ] You get an alert for `ERROR` log lines.
 - [ ] Someone watches hot wallet balances, dead webhook deliveries and payouts in `needs-review`.
 
+## Move from testnet to mainnet
+
+The mode is fixed for the life of an install. To go live after tests on testnet:
+
+1. Make a new install with `--mode mainnet` and a new database. See [Install on a server](/docs/install/).
+2. Enter mainnet wallets: a mainnet xpub (`xpub` or `zpub`), a mainnet Monero view key and mainnet cold wallet addresses.
+3. Add mainnet nodes.
+4. Create new API keys, copy the new IPN secret and add the webhook endpoints again.
+5. In your shop, set the new base URL, API key and IPN secret.
+
+Keep the testnet install for tests of new versions.
+
 ## Final test
 
 - [ ] One small real payment on each network went from checkout to `finished`.
